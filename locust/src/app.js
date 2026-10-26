@@ -178,7 +178,7 @@ function renderSeg(){const t=state.tab,opts=SEGS[t]||null,cur=segCur();let b='';
   if(t==='life')b={egg:'مقطع في التربة · كيس البيض على عمق 12–15 سم',hopper:'الأطوار الخمسة للحوريات في المظهر التجمعي',imm:'الجراد الأحمر غير الناضج جنسياً',adult:'أنثى ناضجة تضع البيض في التربة'}[state.life];
   else if(t==='control')b='منطقة مصابة بالدبا · المسارات من حافة اتجاه الرياح';
   else b={locust:'نموذج مكبّر للجرادة البالغة · وزنها الحقيقي 2–3 غرامات',phase:state.phase==='sol'?'المظهر الانفرادي · أفراد متفرقة':'المظهر التجمعي · بقعة دبا تتحرك معاً',seasons:state.season==='winter'?'الموسم الشتوي · منتصف أكتوبر إلى نهاية فبراير':'الموسم الربيعي · أوائل فبراير إلى أوائل يوليو',damage:'سرب فوق حقل برسيم · الجراد مكبّر للتوضيح',survey:'منطقة رملية بعد المطر · فريق المسح',quiz:QUIZ.length+' أسئلة · اختبر ما تعلمته'}[t]||'';
-  if(state.xray)b='الرؤية تحت التربة · حقل بيض فيه أكياس كثيرة متجاورة';
+  if(state.xray)b=t==='locust'?'الرؤية الداخلية · الجهاز الهضمي وعضلات الطيران والبيض داخل الأنثى':'الرؤية الداخلية · حقل بيض فيه أكياس كثيرة متجاورة تحت التربة';
   segEl.hidden=!opts;if(opts)segEl.innerHTML=opts.map(([k,n])=>`<button type="button" data-seg="${k}" aria-pressed="${k===cur}">${n}</button>`).join('');badge.hidden=!b;badge.textContent=b;}
 function buildPins(){curHS=HS[state.tab]||[];pinsEl.innerHTML='';pinSig='';
   pins=curHS.map((h,i)=>{const el=document.createElement('button');el.type='button';el.className='pin';el.textContent=i+1;el.setAttribute('aria-label',h.t);el.hidden=true;el.addEventListener('click',()=>select(i));pinsEl.appendChild(el);return el;});}
@@ -195,11 +195,12 @@ function select(i){const h=curHS[i];if(!h)return;if(state.active===i){state.acti
   const li=content.querySelector(`.spot[data-i="${i}"]`);if(li)setTimeout(()=>{const acc=li.closest('.acc'),r=acc.getBoundingClientRect(),pnl=content.closest('.panel'),desk=matchMedia('(min-width:900px)').matches,box=desk&&pnl?pnl.getBoundingClientRect():{top:stageEl.getBoundingClientRect().bottom,bottom:innerHeight};if(r.top<box.top+8||r.bottom>box.bottom-8)acc.scrollIntoView({block:'start',behavior:RM?'auto':'smooth'});},360);
   voSpeakNow();}
 function applyPhase(){const s=state.phase==='sol';[SOL,SOLH].forEach(o=>o.visible=s);[GREG,BAND].forEach(o=>o.visible=!s);}
-function applySeason(){const w=state.season==='winter';MAPG.winter.traverse(n=>{if(n.material&&!n.isSprite&&!n.userData.pin)n.material.opacity=w?.5:.15;});MAPG.spring.traverse(n=>{if(n.material&&!n.isSprite&&!n.userData.pin)n.material.opacity=w?.15:.5;});
+function applySeason(){const w=state.season==='winter';mapSeason(w);MAPG.winter.traverse(n=>{if(n.material&&!n.isSprite&&!n.userData.pin)n.material.opacity=w?.5:.15;});MAPG.spring.traverse(n=>{if(n.material&&!n.isSprite&&!n.userData.pin)n.material.opacity=w?.15:.5;});
   MAPG.winter.children[0].children.forEach(c=>{if(c.isSprite)c.visible=w;});MAPG.spring.children[0].children.forEach(c=>{if(c.isSprite)c.visible=!w;});OUTA.visible=!w;}
 function setLife(k){state.life=k;orbit.to(viewOf());renderPanel();renderSeg();voSpeakNow();}
 const SCN={locust:'spec',life:'spec',phase:'spec',quiz:'spec',seasons:'map',damage:'field',survey:'field',control:'field'};
-function setTab(id,quiet){state.tab=id;state.active=null;state.seen.add(id);
+function setTab(id,quiet){if(state.xray)setXrayUI(false);state.tab=id;state.active=null;state.seen.add(id);
+  setTrench(id==='life');xrayBtn.hidden=!(id==='locust'||id==='life');
   const sc=SCN[id];scene=sc==='field'?field:sc==='map'?mapS:spec;orbit=sc==='field'?oField:sc==='map'?oMap:oSpec;
   for(const k in SG)SG[k].visible=k===id||(id==='quiz'&&k==='locust');for(const k in PG)PG[k].visible=k===id;VEG.visible=id!=='damage';
   if(id==='phase')applyPhase();if(id==='seasons')applySeason();
@@ -221,8 +222,10 @@ segEl.addEventListener('click',e=>{const b=e.target.closest('[data-seg]');if(!b)
   else if(t==='seasons'){state.season=v;applySeason();}
   else if(t==='control'){CTRL.machine=+v;layoutControl();field.fog.far=CTRL.machine===2?1400:520;}
   state.active=null;orbit.to(viewOf());renderPanel();renderSeg();buildPins();renderActive();voSpeakNow();});
-function setXrayUI(on){state.xray=on;setXray(on);xrayBtn.setAttribute('aria-pressed',String(on));
-  if(on){state.active=null;if(state.tab!=='life')setTab('life',true);state.life='egg';renderPanel();renderActive();orbit.to({yaw:.5,pitch:.42,dist:22,target:new V3(0,-3.5,0)});}
+function setXrayUI(on){const body=state.tab==='locust';state.xray=on;setXray(on,body?'body':'soil');xrayBtn.setAttribute('aria-pressed',String(on));
+  if(on){state.active=null;renderActive();voStop();
+    if(body)orbit.to({yaw:-.42,pitch:.22,dist:6.6,target:WL(HERO,'abd').setY(1.0)});
+    else{if(state.life!=='egg'){state.life='egg';renderPanel();}orbit.to({yaw:.5,pitch:.42,dist:22,target:new V3(0,-3.5,0)});}}
   renderSeg();}
 xrayBtn.addEventListener('click',()=>setXrayUI(!state.xray));
 $('#resetBtn').addEventListener('click',()=>{if(state.xray)setXrayUI(false);state.active=null;renderActive();voStop();orbit.to(state.tab==='life'?VIEWS.life_over():viewOf());});
@@ -239,7 +242,9 @@ function pinLayout(vis,w,h){const big=document.documentElement.classList.contain
       if(box&&A.x>box.l&&A.x<box.r&&A.y>box.t&&A.y<box.b){const dl=A.x-box.l,dr=box.r-A.x,dt=A.y-box.t,m=Math.min(dl,dr,dt);if(m===dt)A.y=box.t;else if(m===dl)A.x=box.l;else A.x=box.r;}});}
   vis.forEach(v=>{v.el._tox=v.x-v.ax;v.el._toy=v.y-v.ay;});}
 const XL=$('#xl');let xlEls=[];
-function xLabels(){if(!state.xray||scene!==spec)return[];return[['كيس البيض على عمق 12–15 سم',()=>POD.localToWorld(POD.userData.P.eggs.clone())],['مادة رغوية تحمي البيض',()=>POD.localToWorld(POD.userData.P.froth.clone())],['حقل بيض: أكياس كثيرة متجاورة',()=>{const p=PODS.children[3];return p.localToWorld(new V3(0,-4.6,0));}]];}
+function xLabels(){if(!state.xray||scene!==spec)return[];
+  if(state.tab==='locust')return[['الحوصلة: مخزن الطعام',()=>WL(HERO,'crop')],['المعي الأوسط: هضم النبات',()=>WL(HERO,'midgut')],['بيض ينمو داخل الأنثى',()=>WL(HERO,'eggs')],['عضلات الطيران',()=>WL(HERO,'muscle')]];
+  return[['كيس البيض على عمق 12–15 سم',()=>POD.localToWorld(POD.userData.P.eggs.clone())],['مادة رغوية تحمي البيض',()=>POD.localToWorld(POD.userData.P.froth.clone())],['حقل بيض: أكياس كثيرة متجاورة',()=>{const p=PODS.children[3];return p.localToWorld(new V3(0,-4.6,0));}]];}
 function updatePins(){const nt=performance.now();pinDt=Math.min(.1,(nt-pinT)/1000);pinT=nt;const w=stageEl.clientWidth,h=stageEl.clientHeight,R0=document.documentElement.classList.contains('expo')?21:15;const vis=[];
   pins.forEach((el,i)=>{const hs=curHS[i];let ok=!state.xray&&!(hs.g&&((state.tab==='phase'&&hs.g!==state.phase)));if(ok){pv.copy(hs.p()).project(cam);ok=!(pv.z>1||pv.z<-1||Math.abs(pv.x)>1.05||Math.abs(pv.y)>1.05);}
     el.hidden=!ok;if(ok)vis.push({el,i,ax:(pv.x+1)/2*w,ay:(1-pv.y)/2*h});});
@@ -322,7 +327,7 @@ content.addEventListener('click',e=>{const b=e.target.closest('[data-rep]');if(b
 /* ================= exhibition mode ================= */
 let expo=false,idleT=null,tourT=null,tourI=0,swallow=false;const IDLE_MS=45000,STEP_MS=7000,attEl=$('#attract'),expoBtn=$('#expoBtn');
 {const lg=document.querySelector('.org img'),al=$('#attLogo');if(lg&&al)al.src=lg.src;}
-const TOUR=[['locust',0],['locust',3],['life','egg'],['x',1],['x',0],['life','hopper'],['life','imm'],['phase',3],['phase',0],['seasons',0],['seasons',2],['damage',0],['damage',1],['survey',2],['survey',3],['control',0],['control',4]];
+const TOUR=[['locust',0],['x',1],['x',0],['locust',3],['life','egg'],['x',1],['x',0],['life','hopper'],['life','imm'],['phase',3],['phase',0],['seasons',0],['seasons',2],['damage',0],['damage',1],['survey',2],['survey',3],['control',0],['control',4]];
 function tourStep(){if(!attract)return;const[tab,arg]=TOUR[tourI%TOUR.length];tourI++;if(tab==='x'){setXrayUI(!!arg);tourT=setTimeout(tourStep,STEP_MS);return;}
   if(state.tab!==tab)setTab(tab,true);if(tab==='life')setLife(arg);else select(arg);tourT=setTimeout(tourStep,STEP_MS);}
 function startAttract(){if(attract)return;attract=true;attEl.hidden=false;document.documentElement.classList.add('attracting');tourI=0;tourStep();}
@@ -334,6 +339,17 @@ document.addEventListener('keydown',()=>{if(attract)stopAttract();bump();},true)
 function setExpo(on){expo=on;document.documentElement.classList.toggle('expo',on);expoBtn.setAttribute('aria-pressed',String(on));$('#expoBtn .el').textContent=on?'إنهاء وضع المعرض':'وضع المعرض';
   try{if(on&&document.documentElement.requestFullscreen&&!document.fullscreenElement)document.documentElement.requestFullscreen().catch(()=>{});else if(!on&&document.fullscreenElement)document.exitFullscreen().catch(()=>{});}catch(e){}setTimeout(resize,200);bump();}
 expoBtn.addEventListener('click',()=>setExpo(!expo));
+
+/* ================= photographic finish: depth of field for the close-up scenes (desktop only) ================= */
+const HQ=!!(renderer&&THREE.EffectComposer&&renderer.capabilities.isWebGL2&&matchMedia('(pointer:fine)').matches&&!/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)&&!/lq/.test(location.hash));
+let COMP=null,BOKEH=null,RPASS=null;
+if(HQ){try{const rt=new THREE.WebGLMultisampleRenderTarget(4,4,{format:THREE.RGBAFormat,type:THREE.HalfFloatType});rt.samples=4;
+  COMP=new THREE.EffectComposer(renderer,rt);RPASS=new THREE.RenderPass(spec,cam);COMP.addPass(RPASS);
+  BOKEH=new THREE.BokehPass(spec,cam,{focus:10,aperture:.0009,maxblur:.0065,width:4,height:4});COMP.addPass(BOKEH);
+  COMP.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader));
+  const rs=()=>{COMP.setPixelRatio(renderer.getPixelRatio());COMP.setSize(stageEl.clientWidth,stageEl.clientHeight);};new ResizeObserver(rs).observe(stageEl);rs();}
+  catch(e){console.warn('composer',e);COMP=null;}}
+const fx=()=>COMP&&scene===spec;
 
 /* ================= loop ================= */
 let last=performance.now(),clock=0;const dv=new V3();
@@ -354,7 +370,10 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;clock+=dt;
         WSOCK.userData.sock.rotation.z=Math.sin(t*3)*.05;WSOCK.userData.sock.rotation.y=Math.sin(t*1.7)*.08;}}}
   if(renderer){renderer.toneMappingExposure=scene===spec?.82:scene===mapS?.9:.95;
     const sun=scene.userData.sun;if(sun&&scene===field){sun.position.copy(orbit.target).add(new V3(40,90,30));sun.target.position.copy(orbit.target);const e=Math.min(400,Math.max(60,orbit.dist*1.1)),c=sun.shadow.camera;if(c.right!==e){c.left=-e;c.right=e;c.top=e;c.bottom=-e;c.far=400;c.updateProjectionMatrix();}}
-    renderer.render(scene,cam);updatePins();}
+    if(sun&&scene===spec){sun.position.copy(orbit.target).setY(0).add(new V3(10,11,6));sun.target.position.copy(orbit.target).setY(0);const e=Math.min(26,Math.max(7,orbit.dist*1.05)),c=sun.shadow.camera;if(Math.abs(c.right-e)>.5){c.left=-e;c.right=e;c.top=e;c.bottom=-e;c.far=60;c.updateProjectionMatrix();}}
+    if(fx()){const f=cam.position.distanceTo(orbit.target);BOKEH.uniforms.focus.value=f;BOKEH.uniforms.aperture.value=.009/Math.max(4,f);RPASS.scene=BOKEH.scene=scene;COMP.render(dt);}
+    else renderer.render(scene,cam);updatePins();}
   requestAnimationFrame(frame);}
 setTab('locust',true);
 if(/expo/.test(location.hash)){setExpo(true);startAttract();}
+if(/dbg/.test(location.hash))window.__A={fx:()=>!!COMP,orbit:()=>orbit,V3,HERO,setXrayUI,state,VIEWS,cam};

@@ -29,6 +29,7 @@ extra = '''
 .hopstrip figure{margin:0;display:flex;flex-direction:column;gap:4px}
 .hopstrip img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:zoom-in;background:#f4f2ec}
 .hopstrip figcaption{font-size:11.5px;color:var(--muted);text-align:center;line-height:1.4}
+.xray-btn[hidden]{display:none!important}
 .note-sm{font-size:13.5px;color:var(--muted);margin:-4px 0 14px}
 .bars.eat .bt i{background:var(--gold)}
 .as-scene{position:relative;width:min(100%,360px);margin:0 auto 4px;aspect-ratio:360/280;border-radius:18px;overflow:hidden}
@@ -78,10 +79,16 @@ body = f'''<title>أطلس الجراد الصحراوي</title>
 <div class="attract" id="attract" hidden><div class="att-in"><img id="attLogo" alt=""><div><b>اكتشف الجراد الصحراوي</b><span>المس الشاشة لتبدأ التجربة</span></div></div></div>
 <script>{r('photos.js')}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>{r('vendor/three-extras.js')}</script>
 <script>
 (function(){{
+{r('vendor/hdr.js')}
 {r('toolkit.js')}
 {r('xr.js')}
+{r('locust3d.js')}
+{r('ground3d.js')}
+{r('field3d.js')}
+{r('mapdata.js')}
 {r('models.js')}
 {r('app.js')}
 {r('assess.js')}

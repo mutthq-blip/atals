@@ -69,3 +69,11 @@ if(renderer){const s=new THREE.Scene(),g=new THREE.SphereGeometry(60,48,24),p=g.
   const box=new THREE.Mesh(new THREE.PlaneGeometry(34,22),new THREE.MeshBasicMaterial({color:new THREE.Color(1,1,1).multiplyScalar(2.5),side:THREE.DoubleSide}));box.position.set(-32,22,-26);box.lookAt(0,0,0);s.add(box);
   try{const pm=new THREE.PMREMGenerator(renderer);ENV=pm.fromScene(s,.035).texture;pm.dispose();}catch(e){ENV=null;}}
 
+/* real outdoor HDR (Poly Haven, CC0) as image-based light and backdrop */
+let ENV_BG=null;
+if(renderer&&typeof HDR_B64!=='undefined'&&THREE.RGBELoader){try{
+  const bin=atob(HDR_B64),u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);
+  const L=new THREE.RGBELoader();L.setDataType(THREE.HalfFloatType);const d=L.parse(u8.buffer);
+  const t=new THREE.DataTexture(d.data,d.width,d.height,d.format,d.type);t.encoding=THREE.LinearEncoding;t.minFilter=t.magFilter=THREE.LinearFilter;t.generateMipmaps=false;t.flipY=true;t.needsUpdate=true;t.mapping=THREE.EquirectangularReflectionMapping;
+  const pm=new THREE.PMREMGenerator(renderer);const e=pm.fromEquirectangular(t).texture;pm.dispose();ENV=e;ENV_BG=t;
+}catch(e){console.warn('hdr',e);}}
