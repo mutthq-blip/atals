@@ -24,6 +24,10 @@ extra = '''
 .pin.on{background:#0f6b43;color:#fff;box-shadow:0 0 0 4px #b8eacb,0 2px 10px rgba(15,107,67,.35)}
 .pin.on::after{background:#0f6b43;color:#fff;box-shadow:0 4px 14px rgba(15,107,67,.3)}
 .xl .xlab{z-index:3}
+/* all sections visible at once: the bar wraps instead of scrolling sideways */
+.tabs{flex-wrap:wrap;overflow:visible;scroll-snap-type:none;row-gap:6px}
+.tab{scroll-snap-align:none}
+@media (max-width:899px){.tabs{gap:5px;padding:8px 0}.tab{min-height:34px;padding:0 11px;font-size:13px}}
 /* locust additions */
 .hopstrip{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin:10px 0 4px}
 .hopstrip figure{margin:0;display:flex;flex-direction:column;gap:4px}
