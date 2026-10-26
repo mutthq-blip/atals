@@ -435,6 +435,9 @@ html.expo .pin.on::after{font-size:16px;padding:7px 14px}
 .afr{display:block;width:100%;height:min(860px,92svh);border:1px solid var(--line);border-radius:16px;background:#f4f6f3}
 .dfr{display:block;width:100%;min-height:900px;border:1px solid var(--line);border-radius:16px;background:#fff}
 .next-card.d{background:#f4f7f5;border:1px solid var(--line)}
+/* Back link under the dashboard, styled like the site buttons */
+.back{margin:18px 0 0}.back .btn.sec{display:inline-flex;text-decoration:none;color:var(--accent);border-color:var(--accent)}.back .btn.sec:hover{background:#e9f5ee}
+.note a{color:var(--accent);font-weight:600;text-decoration:none}.note a:hover{text-decoration:underline}
 /* No black on the page: top bar and footer in Weqaa green */
 .mock{background:#1b8354;color:#fff}.mock b{color:#ffe08a}
 .views{background:rgba(255,255,255,.16)}.views button{color:#e6f4ec}.views button[aria-pressed="true"]{background:#fff;color:#1b8354}
@@ -459,7 +462,7 @@ html.expo .pin.on::after{font-size:16px;padding:7px 14px}
 </head>
 <body>
 <div dir="rtl" lang="ar">
-<div class="mock"><div class="wrap"><span><b>تصوّر مقترح</b> لعرض أطلس سوسة النخيل على موقع وقاء · نموذج للعرض الداخلي وليس الموقع الرسمي</span>
+<div class="mock"><div class="wrap"><span><b>تصوّر مقترح</b> لعرض أطالس وقاء التفاعلية على موقع وقاء · نموذج للعرض الداخلي وليس الموقع الرسمي</span>
 <div class="views" role="group" aria-label="اختر الصفحة"><button type="button" data-go="home" aria-pressed="true">الصفحة الرئيسية</button><button type="button" data-go="atlas" aria-pressed="false">التوعية والتثقيف: الأطلس</button><button type="button" data-go="tomato" aria-pressed="false">أطلس حافرة الطماطم</button><button type="button" data-go="dash" aria-pressed="false">داشبورد قياس الأثر</button></div></div></div>
 <div class="gov"><div class="wrap"><span class="flag"><i></i>موقع حكومي رسمي تابع لحكومة المملكة العربية السعودية</span><span class="tools"><span>ع+</span><span>ع−</span><span>تباين الألوان</span></span></div></div>
 <header class="hdr"><div class="wrap">
@@ -569,7 +572,7 @@ html.expo .pin.on::after{font-size:16px;padding:7px 14px}
    <p>يعرض تفاعل الزوار مع الأطلس، والفرق في الإجابات الصحيحة قبل التجربة وبعدها. الأرقام الحالية تجريبية لين يبدأ موقع وقاء يستقبل النتائج.</p>
   </div>
   <iframe class="dfr" id="dashFrame" title="داشبورد قياس الأثر"></iframe>
-  <p class="note"><a href="#" data-go="atlas">ارجع للأطلس</a></p>
+  <p class="back"><a href="#" data-go="atlas" class="btn sec">→ ارجع لأطلس سوسة النخيل</a></p>
  </div>
 </main>
 <footer class="ftr"><div class="wrap">
@@ -642,7 +645,19 @@ const EN={
 'الأحد – الخميس، 8:00 ص – 4:00 م':'Sunday – Thursday, 8:00 am – 4:00 pm','نظرة عامة':'Overview','الأهداف الاستراتيجية':'Strategic goals','الهيكل التنظيمي':'Organisational structure','التوظيف':'Careers',
 'وقاء أعمال':'Weqaa Business','وقاء أفراد':'Weqaa Individuals','الخرائط التفاعلية':'Interactive maps','الأخبار':'News','مكتبة الفيديو':'Video library','الفعاليات والأنشطة':'Events and activities',
 '© مركز وقاء 2026':'© Weqaa Center 2026','تصوّر مقترح للعرض الداخلي':'Proposed concept for internal review',
-'اختر الصفحة':'Choose a page','شعار وقاء':'Weqaa logo','القائمة الرئيسية':'Main menu','مسار الصفحة':'Breadcrumb'};
+'اختر الصفحة':'Choose a page','أطلس حافرة الطماطم':'Tomato Leafminer Atlas','أطالس وقاء التفاعلية':'Weqaa interactive atlases','متاح الآن':'Available now','قريباً':'Coming soon','الصحة النباتية · النخيل':'Plant health · Palms','الصحة النباتية · الخضروات':'Plant health · Vegetables','أطلس الجراد الصحراوي':'Desert Locust Atlas','ادخل الأطلس ←':'Open the atlas →','قيد الإعداد':'In preparation',
+'دورة حياة السوسة، وعلامات الإصابة على النخلة، وطرق الوقاية والعلاج، مع اختبار قبل التجربة وبعدها.':'The weevil life cycle, signs of infestation on the palm, prevention and treatment, with a quiz before and after.',
+'كيف تحفر اليرقات الأوراق والثمار، وكيف تكتشف الإصابة بدري، وطرق المكافحة المتكاملة.':'How the larvae mine leaves and fruit, how to spot infestation early, and integrated control.',
+'مراحل الجراد من البيض إلى الأسراب، ومناطق التكاثر، وكيف يرصد وقاء الجراد ويكافحه.':'Locust stages from egg to swarm, breeding areas, and how Weqaa monitors and controls locusts.',
+'تجربة تفاعلية تعرّفك على حافرة أوراق الطماطم ومراحل حياتها، وعلامات الإصابة على الأوراق والثمار، وطرق المكافحة المتكاملة.':'An interactive experience on the tomato leafminer, its life stages, signs on leaves and fruit, and integrated control.',
+'أطالس أخرى:':'Other atlases:','لعرض أطالس وقاء التفاعلية على موقع وقاء · نموذج للعرض الداخلي وليس الموقع الرسمي':'for presenting Weqaa interactive atlases on the Weqaa website · internal mock-up, not the official site','أطلس حافرة الطماطم':'Tomato Leafminer Atlas','أطالس وقاء التفاعلية':'Weqaa interactive atlases','متاح الآن':'Available now','قريباً':'Coming soon','الصحة النباتية · النخيل':'Plant health · Palms','الصحة النباتية · الخضروات':'Plant health · Vegetables','أطلس الجراد الصحراوي':'Desert Locust Atlas','ادخل الأطلس ←':'Open the atlas →','قيد الإعداد':'In preparation',
+'دورة حياة السوسة، وعلامات الإصابة على النخلة، وطرق الوقاية والعلاج، مع اختبار قبل التجربة وبعدها.':'The weevil life cycle, signs of infestation on the palm, prevention and treatment, with a quiz before and after.',
+'كيف تحفر اليرقات الأوراق والثمار، وكيف تكتشف الإصابة بدري، وطرق المكافحة المتكاملة.':'How the larvae mine leaves and fruit, how to spot infestation early, and integrated control.',
+'مراحل الجراد من البيض إلى الأسراب، ومناطق التكاثر، وكيف يرصد وقاء الجراد ويكافحه.':'Locust stages from egg to swarm, breeding areas, and how Weqaa monitors and controls locusts.',
+'تجربة تفاعلية تعرّفك على حافرة أوراق الطماطم ومراحل حياتها، وعلامات الإصابة على الأوراق والثمار، وطرق المكافحة المتكاملة.':'An interactive experience on the tomato leafminer, its life stages, signs on leaves and fruit, and integrated control.',
+'أطالس أخرى:':'Other atlases:','لعرض أطالس وقاء التفاعلية على موقع وقاء · نموذج للعرض الداخلي وليس الموقع الرسمي':'for presenting Weqaa interactive atlases on the Weqaa website · internal mock-up, not the official site','داشبورد قياس الأثر':'Impact dashboard','قياس أثر الأطلس':'Measuring the atlas impact','اعرض الداشبورد':'Show the dashboard','→ ارجع لأطلس سوسة النخيل':'← Back to the Red Palm Weevil Atlas',
+'الزيارات، ومتوسط الإجابات الصحيحة قبل الأطلس وبعده، والأقسام الأكثر زيارة، والضغطات على زر البلاغ.':'Visits, average correct answers before and after the atlas, most visited sections, and report button clicks.',
+'يعرض تفاعل الزوار مع الأطلس، والفرق في الإجابات الصحيحة قبل التجربة وبعدها. الأرقام الحالية تجريبية لين يبدأ موقع وقاء يستقبل النتائج.':'Shows how visitors engage with the atlas and the change in correct answers before and after. Figures are sample data until the Weqaa site starts collecting results.','شعار وقاء':'Weqaa logo','القائمة الرئيسية':'Main menu','مسار الصفحة':'Breadcrumb'};
 const root=document.querySelector('body > div[dir][lang]'),app=document.createElement('div');let cur='ar';try{cur=localStorage.getItem('weqaa-atlas-lang')||'ar';}catch(e){}
 const nodes=[],attrs=[];
 (function collect(){const tw=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>app.contains(n)||/^(SCRIPT|STYLE)$/.test(n.parentNode.nodeName)?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT});
