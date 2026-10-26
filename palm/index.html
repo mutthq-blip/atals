@@ -621,6 +621,7 @@ function trunkMaps(){
     else{const t=.88+.2*q.tone,sh=.7+.3*q.h;R=(150*sh+18)*t+n*22;G=(98*sh+12)*t+n*16;B=(58*sh+8)*t+n*12;}
     ci.data[j]=R;ci.data[j+1]=G;ci.data[j+2]=B;ci.data[j+3]=255;
     const hv=q.h*190+45+n*(q.part===2?20:12);hi.data[j]=hi.data[j+1]=hi.data[j+2]=Math.max(0,Math.min(255,hv));hi.data[j+3]=255;}
+  for(let i=0;i<ci.data.length;i+=4){const d=ci.data,L=.3*d[i]+.59*d[i+1]+.11*d[i+2],w=.38+.12*rnd();d[i]=(d[i]*(1-w)+L*w*1.02)*.88;d[i+1]=(d[i+1]*(1-w)+L*w*.98)*.88;d[i+2]=(d[i+2]*(1-w)+L*w*.93)*.88;}
   g.putImageData(ci,0,0);k.putImageData(hi,0,0);
   // lif: fibre strands hanging in the gaps between rows
   for(let r=0;r<KT.rows;r++){const y=S-(r/KT.rows)*S;
@@ -807,7 +808,7 @@ G.grubHead=keep(new THREE.SphereGeometry(.03,12,10));
 function miniLarva(s=1){const g=new THREE.Group();g.add(new THREE.Mesh(G.grubBody,XM.grub));const h=new THREE.Mesh(G.grubHead,XM.grubHead);h.position.set(Math.cos(.4)*.1,0,Math.sin(.4)*.1);g.add(h);g.scale.setScalar(s);return g;}
 
 /* ---------- fronds ---------- */
-const LC={green:col('#56764a'),olive:col('#7d8c5a'),yellow:col('#c9a64e'),brown:col('#7a5732'),rachis:col('#bba76e'),spine:col('#d9c48c')};
+const LC={green:col('#5b7356'),olive:col('#7f8a66'),yellow:col('#c4a457'),brown:col('#765838'),rachis:col('#b0a176'),spine:col('#d2c192')};
 function healthColor(h,rnd,old){const base=LC.green.clone().lerp(LC.olive,old*.55),c=new THREE.Color();
   if(h>=.5)c.copy(LC.yellow).lerp(base,(h-.5)*2);else c.copy(LC.brown).lerp(LC.yellow,h*2);
   c.offsetHSL((rnd()-.5)*.012,(rnd()-.5)*.04,(rnd()-.5)*.03);return c}
@@ -1051,9 +1052,9 @@ const CROWN_VARS=[0,1,2].map(k=>{const grp=new THREE.Group();
 
 function soilMaps(){
   const S=512,c=cv(S),h=cv(S),g=c.getContext('2d'),k=h.getContext('2d'),ci=g.createImageData(S,S),hi=k.createImageData(S,S),rnd=mulberry(57);
-  for(let i=0;i<S*S;i++){const n=(rnd()-.5)*30,j=i*4;ci.data[j]=118+n;ci.data[j+1]=90+n*.9;ci.data[j+2]=62+n*.7;ci.data[j+3]=255;const hv=128+n*1.4;hi.data[j]=hi.data[j+1]=hi.data[j+2]=hv;hi.data[j+3]=255;}
+  for(let i=0;i<S*S;i++){const n=(rnd()-.5)*30,j=i*4;ci.data[j]=134+n;ci.data[j+1]=114+n*.9;ci.data[j+2]=90+n*.8;ci.data[j+3]=255;const hv=128+n*1.4;hi.data[j]=hi.data[j+1]=hi.data[j+2]=hv;hi.data[j+3]=255;}
   g.putImageData(ci,0,0);k.putImageData(hi,0,0);
-  for(let i=0;i<700;i++){const x=rnd()*S,y=rnd()*S,r=2+rnd()*9,dk=rnd()<.5;g.fillStyle=dk?`rgba(70,50,32,${.25+rnd()*.3})`:`rgba(170,140,100,${.2+rnd()*.3})`;g.beginPath();g.ellipse(x,y,r,r*(.6+rnd()*.4),rnd()*3,0,7);g.fill();k.fillStyle=dk?'rgba(40,40,40,.35)':'rgba(230,230,230,.45)';k.beginPath();k.ellipse(x,y,r,r*.8,0,0,7);k.fill();}
+  for(let i=0;i<700;i++){const x=rnd()*S,y=rnd()*S,r=2+rnd()*9,dk=rnd()<.5;g.fillStyle=dk?`rgba(84,68,52,${.25+rnd()*.3})`:`rgba(178,160,132,${.2+rnd()*.3})`;g.beginPath();g.ellipse(x,y,r,r*(.6+rnd()*.4),rnd()*3,0,7);g.fill();k.fillStyle=dk?'rgba(40,40,40,.35)':'rgba(230,230,230,.45)';k.beginPath();k.ellipse(x,y,r,r*.8,0,0,7);k.fill();}
   for(let i=0;i<500;i++){const x=rnd()*S,y=rnd()*S,r=.8+rnd()*2.2;g.fillStyle=`rgb(${160+rnd()*50|0},${150+rnd()*45|0},${135+rnd()*40|0})`;g.beginPath();g.arc(x,y,r,0,7);g.fill();k.fillStyle='#fff';k.beginPath();k.arc(x,y,r,0,7);k.fill();}
   for(let i=0;i<260;i++){const x=rnd()*S,y=rnd()*S,a=rnd()*3,l=6+rnd()*14;g.strokeStyle=`rgba(${200+rnd()*40|0},${170+rnd()*40|0},${110+rnd()*30|0},.55)`;g.lineWidth=.8;g.beginPath();g.moveTo(x,y);g.lineTo(x+Math.cos(a)*l,y+Math.sin(a)*l);g.stroke();}
   return{map:ctex(c,{rep:[22,22]}),bump:ctex(h,{srgb:false,rep:[22,22]})};
@@ -1115,8 +1116,9 @@ const farmPos=[];{const rnd=mulberry(91);
   for(const x of[-FARM,FARM]){wallSeg(x,-FARM,x,ROAD_Z-3.9);wallSeg(x,ROAD_Z+3.9,x,FARM);
     for(const z of[ROAD_Z-3.9,ROAD_Z+3.9]){const pl=new THREE.Mesh(new THREE.BoxGeometry(.8,2.4,.8),adobe);pl.position.set(x,1.2,z);pl.castShadow=true;farmG.add(pl);}}
   // sparse weeds and dry tufts
-  const rnd=mulberry(19),nW=700,wg=new THREE.ConeGeometry(.07,.32,4);wg.translate(0,.16,0);
-  const weeds=new THREE.InstancedMesh(wg,new THREE.MeshStandardMaterial({roughness:.9}),nW),wc=new THREE.Color();let n=0;
+  const rnd=mulberry(19),nW=700,wg=(()=>{const pos=[],r2=mulberry(7);for(let b=0;b<7;b++){const a=b/7*Math.PI*2+r2(),lean=.25+r2()*.35,hgt=.2+r2()*.16,w=.012,cx=Math.cos(a),cz=Math.sin(a),px=-cz*w,pz=cx*w,tx=cx*lean*hgt,tz=cz*lean*hgt;
+    pos.push(px,0,pz, -px,0,-pz, tx,hgt,tz);}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.computeVertexNormals();return g;})();
+  const weeds=new THREE.InstancedMesh(wg,new THREE.MeshStandardMaterial({roughness:.9,side:THREE.DoubleSide}),nW),wc=new THREE.Color();let n=0;
   for(let i=0;i<nW;i++){const x=(rnd()-.5)*(2*FARM-3),z=(rnd()-.5)*(2*FARM-3);if(Math.abs(z-ROAD_Z)<3.8||Math.hypot(x,z)<1.6)continue;
     q.setFromEuler(new THREE.Euler((rnd()-.5)*.5,rnd()*6,(rnd()-.5)*.5));const s=.6+rnd()*1.1;sc.set(s,s*(.7+rnd()*.8),s);p.set(x,0,z);m.compose(p,q,sc);weeds.setMatrixAt(n,m);
     wc.copy(col(rnd()<.55?'#7d8a45':(rnd()<.5?'#b49a58':'#5f7a3a')));weeds.setColorAt(n,wc);n++;}
@@ -1366,13 +1368,14 @@ function makeWeevil(){
     const LP=pivot(A);g.add(LP.o);tgt=LP.i;legs.push({p:LP.o,sx});
     const cx=add(new THREE.Mesh(new THREE.SphereGeometry(.08,16,12),chitin));cx.position.copy(A);cx.scale.set(1,.8,1);
     const fm=new THREE.QuadraticBezierCurve3(A,A.clone().lerp(K,.5).add(new V3(0,.07,0)),K);
-    add(new THREE.Mesh(taperTube(fm,u=>.038+.042*Math.pow(Math.sin(Math.PI*Math.min(1,u*1.08)),1.3),18,12),chitin));
+    add(new THREE.Mesh(taperTube(fm,u=>.046+.052*Math.pow(Math.sin(Math.PI*Math.min(1,u*1.08)),1.3),18,12),chitin));
     const kn=add(new THREE.Mesh(new THREE.SphereGeometry(.036,12,10),chitin));kn.position.copy(K);
     const out=new V3(sx,0,0),tb=new THREE.QuadraticBezierCurve3(K,K.clone().lerp(F,.5).addScaledVector(out,.05),F);
-    add(new THREE.Mesh(taperTube(tb,u=>.04-.01*u+(u>.88?(u-.88)*.12:0),16,10),chitin));
+    add(new THREE.Mesh(taperTube(tb,u=>.048-.012*u+(u>.88?(u-.88)*.14:0),16,10),chitin));
+    {const hs=[],hr=mulberry(31+li*7+(sx>0?3:0));for(let i=0;i<26;i++){const u=.15+.8*hr(),pt=tb.getPointAt(u),tg=tb.getTangentAt(u),side=new V3(-tg.z,0,tg.x).normalize().multiplyScalar((hr()-.5)*2);const dir=side.clone().add(new V3(0,-.4-hr()*.4,0)).addScaledVector(tg,.6).normalize();hs.push([pt.clone().addScaledVector(dir,.03),pt.clone().addScaledVector(dir,.075+hr()*.03),.0035]);}tgt.add(instSegs(hs,chitinR));}
     const spur=add(new THREE.Mesh(new THREE.ConeGeometry(.013,.08,6),chitinR));spur.position.copy(F).add(new V3(-sx*.03,.0,0));spur.quaternion.setFromUnitVectors(UP,new V3(-sx*.5,-1,0).normalize());
     const tars=[[.065,.04,.022,.05],[.145,.045,.022,.052],[.235,.062,.022,.07]];
-    tars.forEach(([d,w,hh,l],q)=>{const t=add(new THREE.Mesh(new THREE.SphereGeometry(1,14,10),q===2?padM:chitin));t.scale.set(w,hh,l);t.position.copy(F).addScaledVector(D,d).setY(.035);t.quaternion.setFromUnitVectors(new V3(0,0,1),D);});
+    tars.forEach(([d,w,hh,l],q)=>{const t=add(new THREE.Mesh(new THREE.SphereGeometry(1,14,10),q===2?padM:chitin));t.scale.set(w*1.25,hh*1.1,l);t.position.copy(F).addScaledVector(D,d).setY(.035);t.quaternion.setFromUnitVectors(new V3(0,0,1),D);});
     const c0=F.clone().addScaledVector(D,.25).setY(.04),c1=F.clone().addScaledVector(D,.34).setY(.04);tgt.add(seg(c0,c1,.009,chitin,6));
     for(const cl of[-1,1]){const side=new V3(-D.z,0,D.x).multiplyScalar(cl*.35);const cw=add(new THREE.Mesh(new THREE.ConeGeometry(.008,.05,5),chitin));cw.position.copy(c1).addScaledVector(D,.015);cw.quaternion.setFromUnitVectors(UP,D.clone().add(side).add(new V3(0,-.6,0)).normalize());}
     if(li===1&&sx>0)pts.leg=K.clone();
