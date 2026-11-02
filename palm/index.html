@@ -2604,11 +2604,13 @@ requestAnimationFrame(frame);
 
 <style>
 /* Section bar: every section visible at once as a wrapped grid, no sideways scrolling */
+@media (min-width:900px){
 .tabs{position:static;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;overflow:visible;padding:10px 0 14px;scroll-snap-type:none}
 .tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:62px;padding:8px 4px;border-radius:12px;white-space:normal;text-align:center;font-size:12.5px;line-height:1.3}
 .tabs .tab:first-child,.tabs .tab:last-child{margin-inline:0}
 .tab .tn{display:none}
 html.expo .tab{min-height:76px;padding:10px 6px;font-size:15px}
+}
 </style>
 <style>
 .brand .fsz{order:-1;align-self:flex-end;display:inline-flex;gap:2px;border:1px solid var(--line);border-radius:999px;padding:3px;background:var(--surface);margin:0 0 4px}
@@ -2621,4 +2623,66 @@ html[data-fs] #content,html[data-fs] #tabs,html[data-fs] .callout{zoom:var(--fsz
 const r=document.documentElement,bs=document.querySelectorAll('.fsz [data-fs]');
 function ap(){r.setAttribute('data-fs','');r.style.setProperty('--fsz',L[k]);bs.forEach(b=>b.disabled=(+b.dataset.fs<0?k===0:k===L.length-1));try{localStorage.setItem('weqaa-fs',L[k]);}catch(e){}window.dispatchEvent(new Event('resize'));}
 bs.forEach(b=>b.addEventListener('click',()=>{k=Math.max(0,Math.min(L.length-1,k+ +b.dataset.fs));ap();}));ap();})();</script>
+<style>
+/* ===== phone layout: scene stays on screen, sections one swipe or one tap away ===== */
+@media (max-width:899px){
+  :root{--sh:max(42svh,280px)}
+  html.stage-big{--sh:max(70svh,420px)}
+  .stage{height:var(--sh);min-height:0;transition:height .3s ease}
+  .tabs{top:var(--sh);margin:0 -16px 14px;padding:8px 12px 8px;gap:6px;display:flex;flex-wrap:nowrap;overflow-x:auto;
+    -webkit-mask-image:linear-gradient(to left,transparent 0,#000 18px,#000 calc(100% - 18px),transparent 100%);mask-image:linear-gradient(to left,transparent 0,#000 18px,#000 calc(100% - 18px),transparent 100%)}
+  .tab{min-height:38px;padding:0 13px;font-size:13px;flex-direction:row}
+  .tab svg{width:16px;height:16px}
+  .tab .tn{display:none}
+  .tabs .all-btn{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;min-height:38px;padding:0 12px;border-radius:999px;border:1px solid var(--accent);background:var(--accent);color:#fff;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+  .tabs .all-btn svg{width:16px;height:16px}
+  .acc{scroll-margin-top:calc(var(--sh) + 66px)}
+  /* compact header: language and text size on one row */
+  .brand{position:relative;padding-top:12px}
+  .brand .langsw{margin:0 0 6px}
+  .brand .fsz{position:absolute;top:12px;inset-inline-start:0;margin:0}
+  .brand .eyebrow{display:none}
+  .brand h1{font-size:24px}
+  .stage-tools .big-btn svg{width:19px;height:19px}
+}
+@media (min-width:900px){.big-btn,.tabs .all-btn,.secsheet{display:none!important}}
+.secsheet{position:fixed;inset:0;z-index:50;background:rgba(17,25,39,.45);display:flex;align-items:flex-end}
+.secsheet[hidden]{display:none}
+.secsheet .sh-in{width:100%;background:var(--bg);border-radius:20px 20px 0 0;padding:14px 16px calc(18px + env(safe-area-inset-bottom,0px));box-shadow:0 -10px 30px rgba(0,0,0,.2);animation:shUp .22s ease}
+@keyframes shUp{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+.secsheet .sh-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;font-weight:700;font-size:16px}
+.secsheet .sh-x{border:0;background:var(--sky2);width:36px;height:36px;border-radius:50%;font-size:20px;line-height:1;cursor:pointer;color:var(--ink)}
+.secsheet .sh-g{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.secsheet .sh-g button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-height:70px;padding:8px 4px;border-radius:14px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:13px;line-height:1.3;cursor:pointer;text-align:center}
+.secsheet .sh-g button svg{width:20px;height:20px}
+.secsheet .sh-g button[aria-current="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+@media (prefers-reduced-motion:reduce){.stage{transition:none}.secsheet .sh-in{animation:none}}
+</style>
+<script>(function(){
+const mq=matchMedia('(max-width:899px)'),tabs=document.getElementById('tabs'),tools=document.getElementById('tools'),root=document.documentElement;
+const T=()=>root.getAttribute('lang')==='en'||document.querySelector('.app').getAttribute('lang')==='en';
+const ICO_ALL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/></svg>';
+const lbl=()=>{const l=document.querySelector('.app').getAttribute('lang');return l==='en'?['All sections','Sections','Close']:l==='ur'?['تمام حصے','حصے','بند کریں']:['كل الأقسام','الأقسام','إغلاق'];};
+/* "all sections" button at the start of the strip, re-added whenever the strip is rebuilt */
+function addAll(){if(tabs.querySelector('.all-btn'))return;const b=document.createElement('button');b.type='button';b.className='all-btn';b.innerHTML=ICO_ALL+'<span>'+lbl()[1]+'</span>';b.setAttribute('aria-haspopup','dialog');b.addEventListener('click',openSheet);tabs.prepend(b);}
+new MutationObserver(addAll).observe(tabs,{childList:true});addAll();
+const sh=document.createElement('div');sh.className='secsheet';sh.hidden=true;sh.setAttribute('role','dialog');sh.setAttribute('aria-modal','true');
+sh.innerHTML='<div class="sh-in"><div class="sh-h"><span class="sh-t"></span><button type="button" class="sh-x">×</button></div><div class="sh-g"></div></div>';document.body.appendChild(sh);
+function openSheet(){const L=lbl();sh.querySelector('.sh-t').textContent=L[0];sh.querySelector('.sh-x').setAttribute('aria-label',L[2]);sh.setAttribute('aria-label',L[0]);sh.setAttribute('dir',document.querySelector('.app').getAttribute('dir')||'rtl');
+  const g=sh.querySelector('.sh-g');g.innerHTML='';tabs.querySelectorAll('.tab').forEach(t=>{const b=document.createElement('button');b.type='button';const sv=t.querySelector('svg'),sp=t.querySelector('span');b.innerHTML=(sv?sv.outerHTML:'')+'<span>'+(sp?sp.textContent:t.textContent)+'</span>';
+    if(t.getAttribute('aria-selected')==='true')b.setAttribute('aria-current','true');b.addEventListener('click',()=>{closeSheet();t.click();});g.appendChild(b);});
+  sh.hidden=false;setTimeout(()=>{const c=g.querySelector('[aria-current]')||g.firstChild;c&&c.focus();},30);}
+function closeSheet(){sh.hidden=true;const b=tabs.querySelector('.all-btn');b&&b.focus({preventScroll:true});}
+sh.addEventListener('click',e=>{if(e.target===sh||e.target.closest('.sh-x'))closeSheet();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!sh.hidden)closeSheet();});
+/* bigger scene toggle on phones */
+const ICO_BIG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',ICO_SM='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>';
+const big=document.createElement('button');big.type='button';big.className='big-btn';
+function setBig(on){root.classList.toggle('stage-big',on);big.setAttribute('aria-pressed',String(on));const l=document.querySelector('.app').getAttribute('lang');
+  const t=on?(l==='en'?'Smaller scene':'تصغير المشهد'):(l==='en'?'Bigger scene':'تكبير المشهد');big.innerHTML=(on?ICO_SM:ICO_BIG)+'<span class="el">'+t+'</span>';big.setAttribute('aria-label',t);big.title=t;
+  setTimeout(()=>window.dispatchEvent(new Event('resize')),320);}
+big.addEventListener('click',()=>setBig(!root.classList.contains('stage-big')));if(tools)tools.appendChild(big);setBig(false);
+/* keep the scene a sane size when rotating or resizing to desktop */
+mq.addEventListener&&mq.addEventListener('change',()=>{if(!mq.matches)setBig(false);});
+})();</script>
 </body></html>

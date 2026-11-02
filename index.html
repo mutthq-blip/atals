@@ -433,6 +433,7 @@ html.expo .pin.on::after{font-size:16px;padding:7px 14px}
 </style>
 <style>html,body{margin:0;padding:0;background:#fff}
 .afr{display:block;width:100%;height:min(860px,92svh);border:1px solid var(--line);border-radius:16px;background:#f4f6f3}
+@media (max-width:760px){.afr{width:100vw;max-width:none;margin-inline:calc(50% - 50vw);height:100svh;border:0;border-radius:0}}
 .dfr{display:block;width:100%;min-height:900px;border:1px solid var(--line);border-radius:16px;background:#fff}
 .next-card.d{background:#f4f7f5;border:1px solid var(--line)}
 /* Back link under the dashboard, styled like the site buttons */
@@ -595,6 +596,11 @@ function load(v){var s=SRC[v];if(!s||loaded[v])return;loaded[v]=1;var f=document
 function fit(f){var d=f.contentDocument;if(!d)return;var set=function(){f.style.height=Math.max(900,d.documentElement.scrollHeight+4)+'px';};set();
  try{new ResizeObserver(set).observe(d.body);}catch(e){}setTimeout(set,800);setTimeout(set,2500);}
 function hookAtlas(f){try{f.contentDocument.addEventListener('atlas-lang',function(e){document.dispatchEvent(new CustomEvent('atlas-lang',{detail:e.detail}));});}catch(e){}}
+/* on phones, opening an atlas lands straight on it (full screen), not on the intro above it */
+var FR={atlas:'atlasFrame',tomato:'tomatoFrame'};
+function land(v){if(!FR[v]||!matchMedia('(max-width:760px)').matches)return;setTimeout(function(){var f=document.getElementById(FR[v]);if(f)window.scrollTo({top:f.getBoundingClientRect().top+scrollY,behavior:'smooth'});},350);}
+document.addEventListener('click',function(e){var g=e.target.closest&&e.target.closest('[data-go]');if(g)land(g.getAttribute('data-go'));});
+window.addEventListener('load',function(){if(location.hash==='#atlas')land('atlas');if(location.hash==='#tomato')land('tomato');});
 function tab(n){var f=document.getElementById('atlasFrame');try{var t=f.contentDocument.querySelector('[data-tab="'+n+'"]');if(t)t.click();}catch(e){}f.scrollIntoView({behavior:'smooth'});}
 window.__atlasSetLang=function(l){var f=document.getElementById('atlasFrame');var w=f&&f.contentWindow;
  if(loaded.atlas&&w&&w.__atlasSetLang)w.__atlasSetLang(l);else{try{localStorage.setItem('weqaa-atlas-lang',l);}catch(e){}document.dispatchEvent(new CustomEvent('atlas-lang',{detail:l}));}};
