@@ -836,7 +836,7 @@ function makeCrown(o){
   let k=0,ks=0;const samples=[];
   for(let i=0;i<N;i++){
     const t=N>1?i/(N-1):0,az=i*2.39996+rnd()*.25,el=lerp(o.el0,o.el1,t)+(rnd()-.5)*.12;
-    const health=o.health?o.health(t,i,rnd):1,broken=o.broken?o.broken(t,i):false;
+    const health=o.health?o.health(t,i,rnd):1,broken=o.broken?o.broken(t,i):false,fo=o.fold?o.fold(t,i):0;
     if(o.skip&&o.skip(t,i))continue;
     const len=o.len*(.7+.35*Math.min(1,t*1.5))*(.9+rnd()*.2),droop=(.12+.5*t)*len*(o.droopMul||1);
     const d=new V3(Math.cos(el)*Math.sin(az),Math.sin(el),Math.cos(el)*Math.cos(az));
@@ -854,10 +854,10 @@ function makeCrown(o){
       S.crossVectors(T,UP);if(S.lengthSq()<1e-4)S.set(1,0,0);S.normalize();
       const L=(.42+.58*Math.sin(Math.PI*Math.min(.97,v*.92+.08)))*len*.29*(1-.2*v);
       for(const side of[-1,1]){
-        const lift=(j%2?.46:-.06)+(broken?-.35:0);
-        D.copy(S).multiplyScalar(side).addScaledVector(T,.55).addScaledVector(UP,lift).normalize();
-        basis(L,D,side*(.25+(rnd()-.5)*.3));inst.setMatrixAt(k,m);
-        const lc=colr.clone();lc.offsetHSL(0,0,(rnd()-.5)*.05);inst.setColorAt(k,lc);k++;
+        const lift=(j%2?.46:-.06)+(broken?-.35:0)-fo*.5;
+        D.copy(S).multiplyScalar(side*(1-fo*.75)).addScaledVector(T,.55+fo*1.4).addScaledVector(UP,lift).normalize();
+        basis(L*(1-fo*.15)*(.9+rnd()*.2),D,side*(.25+(rnd()-.5)*.3));inst.setMatrixAt(k,m);
+        const lc=colr.clone();lc.offsetHSL((rnd()-.5)*.015,(rnd()-.5)*.06,(rnd()-.5)*.07);if(t>.75&&health>.5&&rnd()<.25)lc.lerp(LC.yellow,.25+rnd()*.2);inst.setColorAt(k,lc);k++;
       }
     }
     samples.push({t,curve,broken});
@@ -911,12 +911,16 @@ class Palm{
     const dyn=this.dyn=new THREE.Group();this.g.add(dyn);
     const{h,r,N,len,seed,offshoots,bunches}=this.o,pts=this.pts={};
     const crown=makeCrown({N,len,sc:1,seed,leaflets:this.o.leaflets||40,
-      el0:st===3?.15:1.35,el1:st===3?-1.05:-.2,droopMul:st===3?1.8:1,
-      health:(t,i,rnd)=>st===0?1:st===1?(t<.22?.42:1):st===2?(t<.42?.12+t*.5:(t>.8?.62:.88)):.05+rnd()*.18,
-      broken:(t,i)=>st===2&&t>.55&&i%4===1,skip:t=>st===3&&t<.32});
+      el0:st===3?.25:1.35,el1:st===3?-1.3:-.2,droopMul:st===3?1.4:st===1?1.05:st===2?1.25:1,
+      health:(t,i,rnd)=>st===0?(t>.9?.72:1):st===1?(t<.25?.38+t:(t>.85?.6:.97)):st===2?(t<.5?.08+t*.7:(t>.8?.4:.7)):.03+rnd()*.12,
+      fold:(t)=>st===3?.5:st===2&&t<.4?.45:st===1&&t<.2?.2:0,
+      broken:(t,i)=>(st===2&&t>.5&&i%3===1)||(st===3&&i%5===2),skip:t=>st===3&&t<.4});
     crown.position.y=h+.12;
-    if(st===3){crown.rotation.z=.5;crown.rotation.x=.15;crown.position.set(.3,h-.15,0);}
+    if(st===3){crown.rotation.z=.2;crown.rotation.x=.08;crown.position.set(.08,h,0);}
     dyn.add(crown);
+    /* dry lower fronds hanging against the trunk: a few on a healthy farm palm, more as the infection spreads */
+    {const nd=[3,4,7,0][st];if(nd){const sk=makeCrown({N:nd,len:len*.82,sc:1,seed:seed+97+st,leaflets:26,el0:-1.05,el1:-1.3,droopMul:.35,health:(t,i,rnd)=>.02+rnd()*.1,fold:()=>.6});
+      sk.position.y=h-.22;dyn.add(sk);}}
     const S=crown.userData.samples,mid=S[Math.floor(S.length*.72)]||S[0],inner=S[1]||S[0],br=S.find(s=>s.broken)||mid;
     pts.frond=()=>crown.localToWorld(mid.curve.getPoint(.6));
     pts.inner=()=>crown.localToWorld(inner.curve.getPoint(.65));
@@ -2400,7 +2404,8 @@ function updatePins(){const nt=performance.now();pinDt=Math.min(.1,(nt-pinT)/100
     el.style.transform=`translate(${x.toFixed(1)}px,${y.toFixed(1)}px)`;
     const dx=x-v.ax,dy=y-v.ay,d=Math.hypot(dx,dy);if(d>R0+4){const ex=x-dx/d*R0,ey=y-dy/d*R0,on=state.active===v.i?' class="on"':'';
       html+=`<g${on}><line x1="${v.ax.toFixed(1)}" y1="${v.ay.toFixed(1)}" x2="${ex.toFixed(1)}" y2="${ey.toFixed(1)}"/><circle cx="${v.ax.toFixed(1)}" cy="${v.ay.toFixed(1)}" r="4.5"/></g>`;}});
-  PL.innerHTML=html;}
+  PL.innerHTML=html;const ho=state.active!==null&&state.active!==undefined;pinsEl2.classList.toggle('has-on',ho);PL.classList.toggle('has-on',ho);}
+const pinsEl2=document.getElementById('pins');
 /* ---- UX v3: section bar shows number + name, stays on screen, arrow keys move between sections ---- */
 function renderTabs(){const N=TABS.length;tabsEl.innerHTML=TABS.map(([id,n],k)=>`<button class="tab${state.seen.has(id)?' seen':''}" role="tab" type="button" data-tab="${id}" aria-selected="${state.tab===id}" tabindex="${state.tab===id?0:-1}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[id]||''}</svg><span>${n}</span><span class="tn" aria-hidden="true">${k+1}/${N}</span></button>`).join('');
   const a=tabsEl.querySelector('[aria-selected="true"]');if(a){const tr=tabsEl.getBoundingClientRect(),ar=a.getBoundingClientRect();if(ar.left<tr.left+20||ar.right>tr.right-20)tabsEl.scrollBy({left:(ar.left+ar.width/2)-(tr.left+tr.width/2),behavior:RM?'auto':'smooth'});}}
@@ -2685,4 +2690,15 @@ big.addEventListener('click',()=>setBig(!root.classList.contains('stage-big')));
 /* keep the scene a sane size when rotating or resizing to desktop */
 mq.addEventListener&&mq.addEventListener('change',()=>{if(!mq.matches)setBig(false);});
 })();</script>
+<style>
+/* picked point stands out, the rest step back */
+.pins.has-on .pin:not(.on){opacity:.32;transform-origin:center}
+.pinlines.has-on g:not(.on){opacity:.25}
+.pins .pin{transition:opacity .25s}
+/* phones: show the picked point's name under it, wrapped so it never runs off screen */
+@media (max-width:899px){
+  .pin.on::after{display:block;inset-inline-start:50%;top:calc(100% + 6px);translate:-50% 0;white-space:normal;width:max-content;max-width:min(58vw,220px);text-align:center;font-size:12px;padding:4px 9px}
+  [dir="rtl"] .pin.on::after{translate:50% 0}
+}
+</style>
 </body></html>
