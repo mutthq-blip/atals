@@ -2664,22 +2664,36 @@ else if(!/[?&]intro=0/.test(location.search))asIntro();
 const SPL={g:new THREE.Group(),els:[]};spreadG.add(SPL.g);
 
 const SPL_PTS=[
-  {k:'start',p:()=>new V3(0,P.o.h+1.3,0),ar:'البداية: نخلة مصابة',en:'Start: infested palm',ur:'آغاز: متاثرہ کھجور'},
-  {k:'end',p:()=>PB.g.position.clone().add(new V3(0,PB.o.h+1.2,0)),ar:'النهاية: نخلة سليمة تُصاب',en:'End: a healthy palm gets infested',ur:'انجام: صحت مند کھجور متاثر'},
-  {k:'end',p:()=>PC.g.position.clone().add(new V3(0,PC.o.h+1.2,0)),ar:'النهاية: نخلة سليمة تُصاب',en:'End: a healthy palm gets infested',ur:'انجام: صحت مند کھجور متاثر'},
+  {k:'start',p:()=>new V3(0,P.o.h+1.3,0),ar:'مصدر الإصابة',en:'Infestation source',ur:'انفیکشن کا ذریعہ'},
+  {k:'end',p:()=>PB.g.position.clone().add(new V3(0,PB.o.h+1.2,0)),ar:'نخلة سليمة مهدَّدة',en:'Healthy palm at risk',ur:'خطرے میں صحت مند کھجور'},
+  {k:'end',p:()=>PC.g.position.clone().add(new V3(0,PC.o.h+1.2,0)),ar:'نخلة سليمة مهدَّدة',en:'Healthy palm at risk',ur:'خطرے میں صحت مند کھجور'},
   {k:'mid',p:()=>woundPos.clone().setY(.9),ar:'تنجذب للجروح',en:'Drawn to wounds',ur:'زخموں کی طرف'},
   {k:'mid',p:()=>trapPos.clone().setY(1.6),ar:'تنجذب للمصيدة',en:'Drawn to the trap',ur:'پھندے کی طرف'}];
+
+/* flight routes: soft dotted arcs flowing from the source palm to the healthy palms, wound and trap */
+const RT={dots:null,curves:[],N:34};
+{const src=new V3(0,P.o.h+.2,0);
+ const ends=[PB.g.position.clone().add(new V3(0,PB.o.h-.2,0)),PC.g.position.clone().add(new V3(0,PC.o.h-.2,0)),woundPos.clone().setY(.45),trapPos.clone().setY(.95)];
+ ends.forEach((e,k)=>{const m=src.clone().lerp(e,.5);m.y=Math.max(src.y,e.y)+(k<2?2.6:1.6);RT.curves.push(new THREE.QuadraticBezierCurve3(src.clone(),m,e));});
+ const dg=new THREE.SphereGeometry(1,10,8);
+ const dm=new THREE.MeshBasicMaterial({color:0xfff6dc,transparent:true,opacity:.92,depthWrite:false});
+ RT.dots=new THREE.InstancedMesh(dg,dm,RT.curves.length*RT.N);RT.dots.frustumCulled=false;RT.dots.renderOrder=5;SPL.g.add(RT.dots);}
+const rtM=new THREE.Matrix4(),rtP=new V3(),rtQ=new THREE.Quaternion(),rtS=new V3();
+function updRoutes(t){if(!RT.dots||!spreadG.visible)return;const N=RT.N,ph=RM?0:(t*.00012)%1;let k=0;
+  RT.curves.forEach(c=>{for(let i=0;i<N;i++){const u=((i/N)+ph)%1;c.getPointAt(u,rtP);
+    const fade=Math.min(1,u/.12,(1-u)/.12),r=Math.max(.05,rtP.distanceTo(cam.position)*(stageEl.clientWidth<600?.0042:.0026))*Math.max(.15,fade);rtS.set(r,r,r);rtM.compose(rtP,rtQ,rtS);RT.dots.setMatrixAt(k++,rtM);}});
+  RT.dots.instanceMatrix.needsUpdate=true;RT.dots.visible=!state.xray;}
 SPL_PTS.forEach(o=>{const d=document.createElement('div');d.className='spl spl-'+o.k;d.setAttribute('aria-hidden','true');stageEl.appendChild(d);o.el=d;});
-function updSpreadLabels(){const on=spreadG.visible&&scene===palmScene&&!state.xray;document.documentElement.classList.toggle('in-spread',spreadG.visible&&scene===palmScene);
+function updSpreadLabels(){updRoutes(performance.now());const on=spreadG.visible&&scene===palmScene&&!state.xray&&state.active===null;document.documentElement.classList.toggle('in-spread',spreadG.visible&&scene===palmScene);
   const w=stageEl.clientWidth,h=stageEl.clientHeight,L=state.lang==='en'?'en':state.lang==='ur'?'ur':'ar';
   SPL_PTS.forEach(o=>{const d=o.el;if(!on){d.style.display='none';return;}pv.copy(o.p()).project(cam);
-    if(pv.z>1||Math.abs(pv.x)>1.1||Math.abs(pv.y)>1.1){d.style.display='none';return;}
-    if(d.textContent!==o[L])d.textContent=o[L];d.style.display='';d.style.transform=`translate(${((pv.x+1)/2*w).toFixed(1)}px,${((1-pv.y)/2*h).toFixed(1)}px) translate(-50%,-100%)`;});}
+    if(pv.z>1||Math.abs(pv.x)>.92||(1-pv.y)/2*h<(w<900?96:84)||pv.y<-.9){d.style.display='none';return;}
+    if(d.textContent!==o[L])d.textContent=o[L];d.style.display='';const hw=(d.offsetWidth||120)/2+8,lx=Math.min(w-hw,Math.max(hw,(pv.x+1)/2*w));d.style.transform=`translate(${lx.toFixed(1)}px,${((1-pv.y)/2*h).toFixed(1)}px) translate(-50%,-100%)`;});}
 /* the spread section opens with a clear note on scale and the route the numbers follow */
 {const _rp=renderPanel;renderPanel=function(){_rp();if(state.tab!=='spread'||content.querySelector('.scale-note'))return;const lede=content.querySelector('.lede');if(!lede)return;const L=state.lang;
-  const t=L==='en'?['The insects in the scene are enlarged many times','So you can see them. The real weevil is only 2–4 cm long, about the size of a date.','How to read the scene','The red label over the infested palm is the <b>start</b>; the green labels over healthy palms are the <b>end</b> the weevil flies to. The numbers follow the journey: <b>1</b> is the source, then flight, then what attracts it, and <b>5</b> is long-distance spread by people.']
-   :L==='ur'?['منظر میں کیڑے کئی گنا بڑے دکھائے گئے ہیں','تاکہ آپ انہیں دیکھ سکیں۔ اصل سونڈی صرف 2–4 سینٹی میٹر لمبی ہے، تقریباً ایک کھجور جتنی۔','منظر کیسے پڑھیں','متاثرہ کھجور پر سرخ نشان <b>آغاز</b> ہے اور صحت مند کھجوروں پر سبز نشان <b>انجام</b>۔ نمبر سفر کی ترتیب میں ہیں: <b>1</b> ماخذ اور <b>5</b> انسان کے ذریعے دور تک منتقلی۔']
-   :['الحشرات في المشهد مكبّرة أضعافاً','لتقدر تشوفها. السوسة الحقيقية طولها ٢–٤ سم فقط، تقريباً بحجم حبة التمر.','كيف تقرأ المشهد','العلامة الحمراء فوق النخلة المصابة هي <b>البداية</b>، والعلامات الخضراء فوق النخيل السليم هي <b>النهاية</b> اللي تطير لها السوسة. والأرقام تمشي مع الرحلة: <b>١</b> مصدر الإصابة، ثم الطيران، ثم ما يجذبها، وآخرها <b>٥</b> انتقالها بيد الإنسان لمسافات بعيدة.'];
+  const t=L==='en'?['The insects in the scene are enlarged many times','So you can see them. The real weevil is only 2–4 cm long, about the size of a date.','How to read the scene','The tag with a red dot marks the <b>infestation source</b>; tags with a green dot mark <b>healthy palms at risk</b>. The moving dotted arcs show the weevil’s flight path. The numbers follow the journey: <b>1</b> is the source, then flight, then what attracts it, and <b>5</b> is long-distance spread by people.']
+   :L==='ur'?['منظر میں کیڑے کئی گنا بڑے دکھائے گئے ہیں','تاکہ آپ انہیں دیکھ سکیں۔ اصل سونڈی صرف 2–4 سینٹی میٹر لمبی ہے، تقریباً ایک کھجور جتنی۔','منظر کیسے پڑھیں','سرخ نقطے والا نشان <b>انفیکشن کا ذریعہ</b> ہے اور سبز نقطے والے نشان <b>خطرے میں صحت مند کھجوریں</b>۔ حرکت کرتی نقطہ دار لکیریں سونڈی کی پرواز کا راستہ دکھاتی ہیں۔ نمبر سفر کی ترتیب میں ہیں: <b>1</b> ماخذ اور <b>5</b> انسان کے ذریعے دور تک منتقلی۔']
+   :['الحشرات في المشهد مكبّرة أضعافاً','لتقدر تشوفها. السوسة الحقيقية طولها ٢–٤ سم فقط، تقريباً بحجم حبة التمر.','كيف تقرأ المشهد','العلامة ذات النقطة الحمراء فوق النخلة المصابة هي <b>مصدر الإصابة</b>، والعلامات ذات النقطة الخضراء فوق النخيل السليم هي <b>النخيل المهدَّد</b>. والخطوط المنقّطة المتحركة تبيّن مسار طيران السوسة. والأرقام تمشي مع الرحلة: <b>١</b> مصدر الإصابة، ثم الطيران، ثم ما يجذبها، وآخرها <b>٥</b> انتقالها بيد الإنسان لمسافات بعيدة.'];
   lede.insertAdjacentHTML('afterend',`<div class="scale-note"><div class="sn-row"><span class="sn-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21M10.5 7.5v6M7.5 10.5h6"/></svg></span><div><b>${t[0]}</b><span>${t[1]}</span></div></div>
    <div class="sn-row"><span class="sn-ic rt" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg></span><div><b>${t[2]}</b><span>${t[3]}</span></div></div></div>`);};}
 requestAnimationFrame(frame);
@@ -2821,12 +2835,12 @@ if(!seen&&st&&!/[?&]intro=0/.test(location.search)||(!seen&&st&&/[?&]coach=1/.te
 /* spread section: scale warning on the scene and start / end labels */
 html.in-spread .badge{background:#b45309!important;color:#fff!important;border-color:#b45309!important;font-weight:700;font-size:14px;padding:7px 14px;box-shadow:0 6px 18px rgba(180,83,9,.35)}
 html.in-spread .badge::before{content:"🔍 ";}
-.spl{position:absolute;left:0;top:0;z-index:2;pointer-events:none;white-space:nowrap;font:700 12.5px/1.3 var(--f-body);padding:5px 10px;border-radius:999px;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,.25)}
-.spl::after{content:"";position:absolute;left:50%;bottom:-5px;width:10px;height:10px;background:inherit;transform:translateX(-50%) rotate(45deg);border-radius:2px;z-index:-1}
-.spl-start{background:#b91c1c;font-size:13.5px}
-.spl-end{background:#15803d}
-.spl-mid{background:rgba(17,25,39,.78);font-weight:600;font-size:11.5px}
-html.expo .spl{font-size:16px}
+.spl{position:absolute;left:0;top:0;z-index:2;pointer-events:none;white-space:nowrap;display:inline-flex;align-items:center;gap:6px;font:600 12px/1.2 var(--f-body);color:#1f2a24;padding:5px 11px 5px 10px;border-radius:999px;background:rgba(255,255,255,.9);border:1px solid rgba(15,61,42,.1);box-shadow:0 2px 10px rgba(16,32,24,.16);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);margin-top:-12px;transition:opacity .25s}
+.spl::before{content:"";flex:none;width:8px;height:8px;border-radius:50%;background:#1b8354;box-shadow:0 0 0 3px rgba(27,131,84,.16)}
+.spl::after{content:"";position:absolute;left:50%;top:100%;width:1.5px;height:12px;margin-left:-.75px;background:linear-gradient(rgba(255,255,255,.95),rgba(255,255,255,0))}
+.spl-start::before{background:#d64533;box-shadow:0 0 0 3px rgba(214,69,51,.18)}
+.spl-mid{display:none!important}
+html.expo .spl{font-size:15px;padding:7px 14px 7px 12px}
 .scale-note{display:flex;flex-direction:column;gap:12px;margin:4px 0 18px;padding:14px;border-radius:14px;background:#fff7ed;border:1.5px solid #f59e0b}
 .scale-note .sn-row{display:flex;gap:12px;align-items:flex-start}
 .scale-note .sn-row+.sn-row{padding-top:12px;border-top:1px dashed #f5c37a}
@@ -2836,7 +2850,7 @@ html.expo .spl{font-size:16px}
 .scale-note b{display:block;font-size:15px;color:#7c2d12;margin-bottom:2px}
 .scale-note span{font-size:14px;line-height:1.6;color:#431407}
 .scale-note span b{display:inline;font-size:inherit;color:#b91c1c}
-@media (max-width:899px){.spl{font-size:11px;padding:4px 8px}.spl-mid{display:none}html.in-spread .badge{font-size:12px;padding:6px 11px;max-width:calc(100% - 70px);white-space:normal;text-align:center}}
+@media (max-width:899px){.spl{font-size:11px;padding:4px 9px 4px 8px}html.in-spread .badge{font-size:12px;padding:6px 11px;max-width:calc(100% - 70px);white-space:normal;text-align:center}}
 </style>
 <script>/* voice-over files load once the scene is up */window.addEventListener("load",function(){setTimeout(function(){var s=document.createElement("script");s.src="audio.js";s.async=true;document.head.appendChild(s);},1200);});</script>
 </body></html>
