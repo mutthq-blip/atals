@@ -1025,12 +1025,12 @@ function mkScene(ext){const s=new THREE.Scene();s.environment=ENV;
   const c=sun.shadow.camera;c.left=-ext;c.right=ext;c.top=ext;c.bottom=-ext;c.near=1;c.far=60;sun.shadow.bias=-.0006;sun.shadow.normalBias=.02;s.add(sun);s.userData.sun=sun;
   return s}
 const palmScene=mkScene(16);
-palmScene.fog=new THREE.Fog(0xefd9b3,38,165);
+palmScene.fog=new THREE.Fog(0xe3ecef,110,300);
 /* late-afternoon light: warm low sun, longer shadows, warm horizon */
-{const sun=palmScene.userData.sun;sun.color.set(0xffc285);sun.intensity=ENV?2.7:1.35;sun.position.set(10,7.5,5);
- palmScene.children.forEach(o=>{if(o.isHemisphereLight){o.color.set(0xffe2c0);o.groundColor.set(0x5e4528);}});}
-{const g=new THREE.SphereGeometry(190,40,20),p=g.attributes.position,cs=[],top=col('#6f9bc9'),hor=col('#f1d6aa'),low=col('#d9bf92');
-  for(let i=0;i<p.count;i++){const y=p.getY(i)/190,c=y>=0?hor.clone().lerp(top,Math.min(1,Math.pow(y,.55)*1.1)):hor.clone().lerp(low,Math.min(1,-y*6));cs.push(c.r,c.g,c.b);}
+{const sun=palmScene.userData.sun;sun.color.set(0xffe9cc);sun.intensity=ENV?2.7:1.35;sun.position.set(10,7.5,5);
+ palmScene.children.forEach(o=>{if(o.isHemisphereLight){o.color.set(0xe6f0ff);o.groundColor.set(0x5e4528);}});}
+{const g=new THREE.SphereGeometry(190,40,20),p=g.attributes.position,cs=[],top=col('#3f86d4'),hor=col('#d6e8f5'),low=col('#e3ecef');
+  for(let i=0;i<p.count;i++){const y=p.getY(i)/190,c=y>=0?hor.clone().lerp(top,Math.min(1,Math.pow(y,.42)*1.25)):hor.clone().lerp(low,Math.min(1,-y*6));cs.push(c.r,c.g,c.b);}
   g.setAttribute('color',new THREE.Float32BufferAttribute(cs,3));
   const sky=new THREE.Mesh(g,new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.BackSide,fog:false,depthWrite:false,toneMapped:false}));sky.renderOrder=-1;palmScene.add(sky);}
 const ground=new THREE.Mesh(new THREE.CircleGeometry(185,96),new THREE.MeshStandardMaterial({map:SAND.map,bumpMap:SAND.bump,bumpScale:.6,roughness:1,transparent:true,opacity:1,envMapIntensity:.5}));
@@ -1039,7 +1039,7 @@ const P=new Palm({seed:7,roots:true,xray:true});palmScene.add(P.g);
 /* a couple of dry fronds cut and left lying at the basin edge, as on a working farm */
 [[2.55,1.05,.06],[3.75,1.2,-.05]].forEach(([az,r0,tl],k)=>{const fr=makeCrown({N:1,len:2.5-k*.3,sc:1,seed:520+k*9,leaflets:30,el0:.02,el1:.02,droopMul:0,health:()=>.04+k*.05,fold:()=>.35});
   fr.rotation.y=az;fr.rotation.z=tl;fr.position.set(Math.sin(az)*r0,.05,Math.cos(az)*r0);fr.traverse(o=>{if(o.isMesh)o.castShadow=true;});palmScene.add(fr);});
-const DUST=(()=>{const n=RM?0:420,pos=new Float32Array(n*3),rnd=mulberry(71);for(let i=0;i<n;i++){pos[i*3]=(rnd()-.5)*30;pos[i*3+1]=rnd()*7;pos[i*3+2]=(rnd()-.5)*30;}
+const DUST=(()=>{const n=0,pos=new Float32Array(n*3),rnd=mulberry(71);for(let i=0;i<n;i++){pos[i*3]=(rnd()-.5)*30;pos[i*3+1]=rnd()*7;pos[i*3+2]=(rnd()-.5)*30;}
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));
   const c=cv(64),x=c.getContext('2d'),gr=x.createRadialGradient(32,32,0,32,32,32);gr.addColorStop(0,'rgba(255,244,220,1)');gr.addColorStop(1,'rgba(255,244,220,0)');x.fillStyle=gr;x.fillRect(0,0,64,64);
   const pts=new THREE.Points(g,new THREE.PointsMaterial({size:.06,map:ctex(c),transparent:true,opacity:.55,depthWrite:false,blending:THREE.AdditiveBlending}));palmScene.add(pts);
@@ -2121,9 +2121,6 @@ function frame(now){
      crate.userData.body.position.y=sp>.05?.012*Math.sin(clock*11)+.006*Math.sin(clock*23):0;crate.userData.body.rotation.x=sp>.05?.006*Math.sin(clock*7):0;
      crate.userData.wheels.forEach(w=>w.rotation.z=-x/.4);crate.userData.step(dt,clock,sp);}
   }
-  /* focus haze: in the palm-centred sections the far farm softens so the subject palm reads first */
-  {const foc=['signs','prevent','treat','palm'].includes(state.tab),f=palmScene.fog,k=1-Math.exp(-dt*2.5);
-   f.near+=((foc?11:38)-f.near)*k;f.far+=((foc?42:165)-f.far)*k;}
   WIND.uTime.value=clock;
   if(!RM){
     if(scene===palmScene){DUST.step(dt,clock);P.animate(clock);}
