@@ -1289,6 +1289,8 @@ function makeFlyer(){const g=new THREE.Group();
 const holeW=i=>{const[a,y]=HOLES[i];const R=P.R(y)+.06;return new V3(Math.sin(a)*R,y,Math.cos(a)*R)};
 const dests=[woundPos.clone().setY(.3),trapPos.clone().setY(.9),PC.g.position.clone().add(new V3(.3,4.9,.3)),PB.g.position.clone().add(new V3(-.3,5.7,.2))];
 const flyers=[];
+/* the weevil the camera rides along with when "Flight" is chosen: it flies from the infested palm to a healthy one */
+const FLY_HERO=3;
 for(let i=0;i<7;i++){const src=holeW(i%HOLES.length),dst=dests[i%dests.length].clone();
   const mid=src.clone().lerp(dst,.5);mid.y+=3+(i%3);
   const f=makeFlyer();spreadG.add(f);flyers.push({g:f,curve:new THREE.QuadraticBezierCurve3(src,mid,dst),sp:.1+(i%4)*.025,off:i/7});}
@@ -1734,7 +1736,7 @@ const HS={
   ],
   spread:[
     {t:'النخيل والمزارع المهملة',b:'النخلة شديدة الإصابة تحوي أعداداً كبيرة من كل الأطوار، وبقاؤها يمنح البالغات فرصة الطيران إلى النخيل السليم المجاور. والمزارع المهملة والمغلقة مصدر دائم لتكاثر الآفة، لذلك يُتعامل معها وفق بروتوكول خاص.',p:holeP(1,.1),yaw:holeYaw(1),dist:7,pitch:.25},
-    {t:'الطيران',b:'تطير الحشرة البالغة بشكل متواصل 1–1.5 كم، وتتنقل من نخلة إلى أخرى على علو قد يصل إلى 15 متراً، وقد تقطع حتى 7 كم خلال 3–5 أيام. تغادر النخلة حين تتدهور أنسجتها وتتجه نحو مصادر الفيرومون والكيرومون.',p:()=>flyers[0].g.position.clone(),dist:9,pitch:.3},
+    {t:'الطيران',b:'تطير الحشرة البالغة بشكل متواصل 1–1.5 كم، وتتنقل من نخلة إلى أخرى على علو قد يصل إلى 15 متراً، وقد تقطع حتى 7 كم خلال 3–5 أيام. تغادر النخلة حين تتدهور أنسجتها وتتجه نحو مصادر الفيرومون والكيرومون.',p:()=>flyers[FLY_HERO].g.position.clone(),follow:true,fly:true,dist:4.6,pitch:.3,get yaw(){const c=flyers[FLY_HERO].curve,d=c.v2.clone().sub(c.v0);let y=Math.atan2(d.x,d.z)+Math.PI/2;if(Math.sin(y)*c.v0.x+Math.cos(y)*c.v0.z<0)y+=Math.PI;return y;}},
     {t:'الجروح ورائحتها (الكيرومون)',b:'التقليم والتكريب وإزالة الفسائل والرواكيب وقص الطلع الذكري تُحدث جروحاً تنبعث منها روائح تجذب السوسة، ويتآزر الكيرومون مع الفيرومون في جذبها. لذلك تُغلق الجروح بالطين أو تُعالج بمبيد معتمد فوراً، ويُتجنّب التكريب في فترات ذروة نشاط الحشرة.',p:()=>woundPos.clone().setY(.3),dist:5,pitch:.35},
     {t:'الفيرومون التجميعي',b:'مادة متطايرة ينتجها الذكر فتجذب الذكور والإناث معاً، وتتكون من عنصرين: فيروجينيول (9 أجزاء من 10) وفيروجينيون (جزء من 10). تستخدمه المصائد مع التمر والماء لرصد الحشرة واصطيادها.',p:()=>trapPos.clone().setY(.95),dist:4.5,pitch:.4},
     {follow:true,t:'نقل الفسائل والنخيل',b:'تداول ونقل فسائل ونقائل النخيل غير الموثوقة من أهم أسباب الانتشار بين المزارع والمناطق، فالفسيلة المصابة قد تبدو سليمة من الخارج. لا يُسمح بالنقل إلا بشهادة نقل سارية، ومن موقع إنتاج لم تُسجَّل فيه إصابة خلال 6 أشهر على الأقل ويبعد عن أقرب موقع مصاب 2 كم، بعد تغطيس الفسائل في محلول مبيد معتمد. والنقل دون شهادة مخالفة لنظام الحجر الزراعي.',p:()=>crate.position.clone().add(new V3(0,1.2,0)),dist:11,pitch:.32,yaw:.9},
@@ -1948,6 +1950,7 @@ function select(i){
   const h=curHS[i];if(!h)return;if(state.xray)setXrayUI(false);
   if(h.s!==undefined&&state.sym<h.s){setSym(h.s);}
   state.active=i;
+  if(h.fly){const f=flyers[FLY_HERO];f.ph=Math.floor(f.ph??0)+1.07;f.g.position.copy(f.curve.getPoint(0));}
   const p=h.p().clone();const yaw=h.yaw!==undefined?h.yaw:(Math.hypot(p.x,p.z)>.25?Math.atan2(p.x,p.z):orbit.yaw);
   orbit.to({yaw,pitch:h.pitch??.2,dist:h.dist??6,target:p});
   renderCallout();
@@ -2104,16 +2107,21 @@ function frame(now){
   if(!frame.booted){frame.booted=1;const bt=document.getElementById('boot');if(bt){bt.classList.add('done');setTimeout(()=>bt.remove(),600);}}
   qmon(now-last);
   const dt=Math.min(.05,(now-last)/1000);last=now;clock+=dt;
-  {const ah=state.active!==null&&curHS[state.active];if(ah&&ah.follow&&!orbit.goal)orbit.target.lerp(ah.p(),1-Math.exp(-dt*3));}
+  {const ah=state.active!==null&&curHS[state.active];if(ah&&ah.follow){if(orbit.goal)orbit.goal.target.copy(ah.p());else orbit.target.lerp(ah.p(),1-Math.exp(-dt*(ah.fly?6:3)));}}
   orbit.update(dt);orbit.apply(cam);
+  {/* riding along with the flying weevil: clip fronds that come between the camera and the insect */
+   const fo=state.tab==='spread'&&state.active!==null&&curHS[state.active]&&curHS[state.active].fly,nn=fo?Math.max(.05,orbit.dist-1.6):.05;
+   if(Math.abs(cam.near-nn)>.01){cam.near=nn;cam.updateProjectionMatrix();}
+   document.documentElement.classList.toggle('fly-follow',!!fo);}
   if(spreadG.visible){
-    flyers.forEach(f=>{const raw=(clock*f.sp*.8+f.off)%1,sit0=raw<.1,sit1=raw>.9,q=Math.min(1,Math.max(0,(raw-.1)/.8)),u=q*q*q*(q*(q*6-15)+10);
+    const flyOn=state.tab==='spread'&&state.active!==null&&curHS[state.active]&&curHS[state.active].fly;
+    flyers.forEach((f,fi)=>{f.ph=(f.ph??f.off)+dt*f.sp*.8*(flyOn&&fi===FLY_HERO?.5:1);f.g.visible=!flyOn||fi===FLY_HERO;const raw=f.ph%1,sit0=raw<.1,sit1=raw>.9,q=Math.min(1,Math.max(0,(raw-.1)/.8)),u=q*q*q*(q*(q*6-15)+10);
       const p=f.curve.getPoint(u),tg=f.curve.getTangent(Math.min(.999,Math.max(.001,u))),tg2=f.curve.getTangent(Math.min(.999,u+.03));
       const flying=!sit0&&!sit1,hov=flying?Math.sin(Math.PI*q):0;
       f.g.position.copy(p).add(new V3(Math.sin(clock*2.3+f.off*9)*.12*hov,Math.sin(clock*4.1+f.off*7)*.08*hov,Math.cos(clock*1.7+f.off*5)*.1*hov));
       const fwd=flying?tg.clone():new V3(tg.x,0,tg.z).normalize();f.g.lookAt(f.g.position.clone().add(fwd));
       if(flying){const turn=new V3().crossVectors(tg,tg2).y;f.g.rotateZ(Math.max(-.7,Math.min(.7,-turn*14)));f.g.rotateX(-.35*hov);}
-      const fade=Math.min(1,raw/.03,(1-raw)/.03);f.g.scale.setScalar(1.8*Math.max(.01,fade));
+      const fade=Math.min(1,raw/.03,(1-raw)/.03);f.g.scale.setScalar((flyOn&&fi===FLY_HERO?2.4:1.8)*Math.max(.01,fade));
       const ws=f.g.userData.w;ws.forEach(w=>w.visible=flying);
       if(flying){const fl=Math.sin(clock*52+f.off*20)*.95;ws[0].rotation.z=fl;ws[1].rotation.z=-fl;}});
     {/* drive in once each time the section opens, then stay parked beside the palm (a loop distracts the reader) */
@@ -2690,7 +2698,7 @@ const rtM=new THREE.Matrix4(),rtP=new V3(),rtQ=new THREE.Quaternion(),rtS=new V3
 function updRoutes(t){if(!RT.dots||!spreadG.visible)return;const N=RT.N,ph=RM?0:(t*.00012)%1;let k=0;
   RT.curves.forEach(c=>{for(let i=0;i<N;i++){const u=((i/N)+ph)%1;c.getPointAt(u,rtP);
     const fade=Math.min(1,u/.12,(1-u)/.12),r=Math.max(.05,rtP.distanceTo(cam.position)*(stageEl.clientWidth<600?.0042:.0026))*Math.max(.15,fade);rtS.set(r,r,r);rtM.compose(rtP,rtQ,rtS);RT.dots.setMatrixAt(k++,rtM);}});
-  RT.dots.instanceMatrix.needsUpdate=true;RT.dots.visible=!state.xray;}
+  RT.dots.instanceMatrix.needsUpdate=true;RT.dots.visible=!state.xray&&!(state.active!==null&&curHS[state.active]&&curHS[state.active].fly);}
 SPL_PTS.forEach(o=>{const d=document.createElement('div');d.className='spl spl-'+o.k;d.setAttribute('aria-hidden','true');stageEl.appendChild(d);o.el=d;});
 function updSpreadLabels(){updRoutes(performance.now());const on=spreadG.visible&&scene===palmScene&&!state.xray&&state.active===null;document.documentElement.classList.toggle('in-spread',spreadG.visible&&scene===palmScene);
   const w=stageEl.clientWidth,h=stageEl.clientHeight,L=state.lang==='en'?'en':state.lang==='ur'?'ur':'ar';
@@ -2732,6 +2740,7 @@ html.expo .tab{min-height:76px;padding:10px 6px;font-size:15px}
 .fsz button{font:inherit;font-weight:700;font-size:14px;line-height:1;border:0;background:transparent;color:var(--ink);padding:6px 11px;border-radius:999px;cursor:pointer;direction:ltr}
 .fsz button:hover{background:var(--sky2)}.fsz button:disabled{opacity:.35;cursor:default}
 .fsz button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+html.fly-follow #pins,html.fly-follow #pinlines,html.fly-follow .spl{visibility:hidden}
 /* phones: never let the page shift sideways (the section strip scrolls inside itself) */
 @media (max-width:899px){html,body,.app,.panel{overflow-x:clip}}
 /* phones: language and text-size buttons get a full finger-sized hit area */
