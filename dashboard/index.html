@@ -47,7 +47,7 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
     refresh(){},params:()=>({}),setParams(){},resetParams(){},setLink(){},loader(){}};
   let t;window.addEventListener('resize',()=>{clearTimeout(t);t=setTimeout(()=>subs.forEach(f=>f()),150);});
 })();
-</script></head><body><div id="dash-root">
+</script><style>.ax-sample{display:flex!important;flex-direction:column;gap:2px;align-items:flex-start;margin-top:10px!important;padding:10px 14px!important;border-radius:10px!important;background:#fff4e5!important;border:1.5px solid #f59e0b!important;border-inline-start:6px solid #d97706!important;color:#7c2d12!important;font-size:14px!important;max-width:100%}.ax-sample b{font-size:15px;color:#9a3412}</style></head><body><div id="dash-root">
 <style>
 .ax{direction:rtl;font-family:var(--font-anthropic-sans),"IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif;display:grid;gap:var(--cds-gap-lg);font-variant-numeric:tabular-nums}
 .ax-h{display:grid;gap:var(--cds-gap-xs)}
@@ -96,12 +96,12 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
 <div class="ax" dir="rtl" lang="ar">
   <header class="ax-h">
     <h1 id="title">تفاعل أطلس سوسة النخيل</h1>
-    <p class="ax-take" id="takeaway">من بين <b data-source="kpi" data-field="paired" data-row="0" class="dash-skeleton">—</b> زائر أجابوا الاختبار قبل الأطلس وبعده، ارتفع متوسط الإجابات الصحيحة من <b data-source="kpi" data-field="pre_avg" data-row="0" class="dash-skeleton">—</b> إلى <b data-source="kpi" data-field="post_avg" data-row="0" class="dash-skeleton">—</b>.</p>
-    <p class="ax-sample">بيانات تجريبية بنفس شكل التصدير المتوقع من موقع وقاء، تُستبدل بالبيانات الحقيقية أول ما يبدأ التخزين</p>
+    <p class="ax-take" id="takeaway">من بين <b data-source="kpi" data-field="paired" data-row="0" class="dash-skeleton">—</b> زائراً أجابوا عن الاختبار قبل الأطلس وبعده، ارتفع متوسط الإجابات الصحيحة من <b data-source="kpi" data-field="pre_avg" data-row="0" class="dash-skeleton">—</b> إلى <b data-source="kpi" data-field="post_avg" data-row="0" class="dash-skeleton">—</b>.</p>
+    <p class="ax-sample" role="note"><b>بيانات تجريبية للعرض فقط</b><span>الأرقام توضيحية بالصيغة نفسها المتوقعة من موقع وقاء، وتُستبدل بالبيانات الفعلية عند بدء جمع النتائج.</span></p>
   </header>
 
   <section class="ax-kpis" id="kpis" aria-label="أرقام رئيسية">
-    <div class="ax-kpi"><span class="lb">الزيارات</span><span class="v dash-skeleton" data-source="kpi" data-field="sessions" data-row="0">—</span><span class="s">آخر 28 يوم</span></div>
+    <div class="ax-kpi"><span class="lb">الزيارات</span><span class="v dash-skeleton" data-source="kpi" data-field="sessions" data-row="0">—</span><span class="s">آخر 28 يوماً</span></div>
     <div class="ax-kpi"><span class="lb">أجابوا الاختبار القبلي</span><span class="v dash-skeleton" data-source="kpi" data-field="pre_rate" data-row="0">—</span><span class="s">من الزيارات</span></div>
     <div class="ax-kpi"><span class="lb">متوسط قبل الأطلس</span><span class="v dash-skeleton" data-source="kpi" data-field="pre_avg" data-row="0">—</span><span class="s">إجابات صحيحة، لمن أجاب الاختبارين</span></div>
     <div class="ax-kpi"><span class="lb">متوسط بعد الأطلس</span><span class="v dash-skeleton" data-source="kpi" data-field="post_avg" data-row="0">—</span><span class="s up"><span data-source="kpi" data-field="gain" data-row="0">—</span> نقطة تحسّن</span></div>
@@ -112,27 +112,27 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
   <div class="ax-grid">
     <section class="ax-card" id="questions">
       <h2>الأثر على كل سؤال</h2>
-      <p class="note">نسبة الإجابة الصحيحة قبل الأطلس وبعده، لنفس الزوار اللي أجابوا الاختبارين.</p>
+      <p class="note">نسبة الإجابة الصحيحة قبل الأطلس وبعده، للزوار أنفسهم الذين أجابوا عن الاختبارين.</p>
       <div class="ax-legend"><span><i></i>قبل</span><span><i class="a"></i>بعد</span></div>
       <div class="ax-bars dash-skeleton" id="qbars" data-source="qgain"></div>
     </section>
     <section class="ax-card" id="funnel">
       <h2>رحلة الزائر</h2>
-      <p class="note">كم زائر وصل لكل خطوة، ونسبته من كل اللي فتحوا الأطلس. الأحمر أكبر نقطة يتوقف عندها الزوار.</p>
+      <p class="note">عدد الزوار الذين وصلوا إلى كل خطوة، ونسبتهم من إجمالي من فتحوا الأطلس. يشير اللون الأحمر إلى أكبر نقطة توقّف.</p>
       <div class="ax-bars dash-skeleton" id="fbars" data-source="funnel"></div>
     </section>
   </div>
 
   <section class="ax-card" id="daily">
     <h2>الزيارات اليومية</h2>
-    <p class="note">عدد الجلسات اللي فتحت الأطلس كل يوم.</p>
+    <p class="note">عدد الجلسات التي فتحت الأطلس يومياً.</p>
     <div class="ax-daily dash-skeleton" id="dchart" data-source="daily"></div>
   </section>
 
   <div class="ax-grid">
     <section class="ax-card" id="sections">
       <h2>الأقسام الأكثر زيارة</h2>
-      <p class="note">نسبة الزيارات اللي فتحت كل قسم.</p>
+      <p class="note">نسبة الزيارات التي فتحت كل قسم.</p>
       <div class="ax-bars dash-skeleton" id="rbars" data-source="reach"></div>
     </section>
     <section class="ax-card" id="langs">

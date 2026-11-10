@@ -1651,14 +1651,18 @@ const VIEWS={
   life_over:{yaw:.8,pitch:.3,dist:22,tgt:[0,SEC.H*.47,0]},
   life_pupa:{yaw:.3,pitch:.12,dist:6.4,tgt:[SEC.R*.5,SEC.H*.45,.2]},
   life_egg:{yaw:EG.userData.center?Math.atan2(EG.userData.center.x,EG.userData.center.z):.4,pitch:.8,dist:2.6,tgt:[EG.userData.center.x+.13,SEC.H+.08,EG.userData.center.z-.05]},
-  spread:{yaw:.35,pitch:.74,dist:32,tgt:[.5,1.5,4.5]},
   signs:{yaw:.2,pitch:.14,dist:11,tgt:[0,2.6,0]},
   palm:{yaw:.5,pitch:.12,dist:15,tgt:[0,3.2,0]},
   quiz:{yaw:.85,pitch:.45,dist:5.8,tgt:[W.g.position.x,W.g.position.y+.45,W.g.position.z+.25]},
   treat:{yaw:.55,pitch:.2,dist:12,tgt:[.6,2.2,.4]},
   prevent:{yaw:.55,pitch:.2,dist:12,tgt:[.6,2.2,.4]}
 };
-const oPalm=new Orbit(VIEWS.palm,{pitch:[-.2,1.35],dist:[2.4,42],spin:.06});
+/* phones: the stage is short, so the palm-centred views come in closer and the pins spread out */
+{const MOB={signs:{dist:10,tgt:[0,2.7,0]},treat:{dist:11,tgt:[.5,2.6,.4]},prevent:{dist:10,tgt:[.5,2.2,.4]},palm:{dist:13.5,tgt:[0,3.2,0]}};
+ Object.keys(MOB).forEach(k=>{const D=VIEWS[k];Object.defineProperty(VIEWS,k,{enumerable:true,get(){return innerWidth<900?Object.assign({},D,MOB[k]):D;}});});}
+/* spread: on phones the scene is short, so pull back and aim higher so the start/end tags clear the scale notice */
+Object.defineProperty(VIEWS,'spread',{enumerable:true,get(){return innerWidth<900?{yaw:.3,pitch:.9,dist:50,tgt:[-1,6.2,2]}:{yaw:.35,pitch:.74,dist:32,tgt:[.5,1.5,4.5]};}});
+const oPalm=new Orbit(VIEWS.palm,{pitch:[-.2,1.35],dist:[2.4,52],spin:.06});
 const oSpec=new Orbit(VIEWS.weevil,{pitch:[-.1,1.4],dist:[2,26],spin:.12});
 let scene=spec,orbit=oSpec;
 
@@ -1710,6 +1714,9 @@ const GP=k=>(typeof GUIDE_PH!=='undefined'&&GUIDE_PH[k])||null;
 const photoOf0=(tab,i)=>{if(!PHOTO_TABS.includes(tab))return null;const key=tab+'-'+(i+1),e=(window.ATLAS_PHOTOS||{})[key]||{},g=GP(key),df=PHOTO_DEFAULTS[key]||null;
   if(e.img)return{img:e.img,credit:e.credit||'',alt:g?g.img:df&&df.img,altCredit:g?gcap(g):df&&df.credit};
   if(g)return{img:g.img,credit:gcap(g),alt:df&&df.img,altCredit:df&&df.credit};
+  /* web build: photos arrive a moment after the page; show a light placeholder (no network) until they do */
+  if(typeof GUIDE_PH==='undefined')return{img:'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==',credit:'',alt:'',altCredit:''};
+  if(df)return{img:df.img,credit:df.credit||'',alt:'',altCredit:''};
   return{img:'photos/'+key+'.jpg',credit:e.credit||'',alt:df&&df.img,altCredit:df&&df.credit};};
 const crEN=c=>c&&EN()?c.replace('تصوير:','Photo:').replace('ويكيميديا كومنز','Wikimedia Commons').replace('ملكية عامة','Public domain'):c;
 const photoOf=(tab,i)=>{const r=photoOf0(tab,i);if(r){r.credit=crEN(r.credit);r.altCredit=crEN(r.altCredit);}return r;};
@@ -2311,7 +2318,7 @@ const LG=(a,e)=>EN()?e:a;
 state.lang='ar';
 function renderPanel(){(EN()?renderPanelEN:renderPanelAR)();}
 /* photos may arrive after the first render (separate file on the web build): refresh the open section once they land */
-document.addEventListener('atlas-photos',()=>{try{if(state.active===null||state.active===undefined)renderPanel();}catch(e){}});
+document.addEventListener('atlas-photos',()=>{try{if(state.active===null||state.active===undefined)renderPanel();else renderCallout();}catch(e){}});
 if(typeof GUIDE_PH!=='undefined')Object.keys(GUIDE_PH).forEach(k=>GUIDE_PH[k].k=k);
 const HS_AR={};for(const t in HS)HS_AR[t]=HS[t].map(h=>({t:h.t,b:h.b,x:h.x}));
 const LIFE_AR=LIFE.map(s=>({t:s.t,d:s.d,sz:s.sz,b:s.b})),QUIZ_AR=QUIZ.map(q=>({q:q.q,o:q.o.slice(),e:q.e})),TABS_AR=TABS.map(x=>x[1]),SYM_AR=SYM.slice(),SYMS_AR=SYMS.slice(),XR_AR=Object.assign({},XR_NOTE);
@@ -2417,7 +2424,9 @@ STATIC.push(...[['#resetBtn .rl','text','Reset view']].map(([sel,prop,en])=>{con
 /* ---- pins float off their anchors with a thin leader line ---- */
 const PL=document.getElementById('pinlines'),SVGNS='http://www.w3.org/2000/svg';
 let pinSig='',pinStill=0,pinLast=null,pinT=performance.now(),pinDt=.016;
-function pinLayout(vis,w,h){const big=document.documentElement.classList.contains('expo'),Lr=big?58:44,Dmin=(scene===palmScene?(big?60:46):(big?56:44));
+/* how far down the stage's top overlays (stage switcher, caption) reach, so pins stay clear of them */
+function pinTop(){const sr=stageEl.getBoundingClientRect();let b=0;['seg','badge'].forEach(id=>{const e=document.getElementById(id);if(e&&!e.hidden&&e.offsetParent){const r=e.getBoundingClientRect();if(r.height)b=Math.max(b,r.bottom-sr.top);}});return Math.max(40,b+20);}
+function pinLayout(vis,w,h){const T0=pinTop(),big=document.documentElement.classList.contains('expo'),Lr=big?58:44,Dmin=(scene===palmScene?(big?60:46):(big?56:44));
   if(!vis.length)return;let cx=0,cy=0;vis.forEach(v=>{cx+=v.ax;cy+=v.ay;});cx/=vis.length;cy/=vis.length;
   const inPalm=scene===palmScene&&state.tab!=='spread';let tx=cx;if(inPalm){pv.copy(P.g.position).setY(2.5).project(cam);tx=(pv.x+1)/2*w;}
   const L2=inPalm?(big?66:52):Lr;
@@ -2431,12 +2440,14 @@ function pinLayout(vis,w,h){const big=document.documentElement.classList.contain
     for(let a=0;a<vis.length;a++)for(let b=a+1;b<vis.length;b++){const A=vis[a],B=vis[b];let dx=B.x-A.x,dy=B.y-A.y,d=Math.hypot(dx,dy)||.01;
       if(d<Dmin){const m=(Dmin-d)/2;dx/=d;dy/=d;A.x-=dx*m;A.y-=dy*m;B.x+=dx*m;B.y+=dy*m;}}
     vis.forEach(A=>{vis.forEach(B=>{if(A===B)return;let dx=A.x-B.ax,dy=A.y-B.ay,d=Math.hypot(dx,dy)||.01;if(d<26){A.x+=dx/d*(26-d)*.5;A.y+=dy/d*(26-d)*.5;}});
-      A.x=Math.min(w-24,Math.max(24,A.x));A.y=Math.min(h-24,Math.max(118,A.y));
+      A.x=Math.min(w-24,Math.max(24,A.x));A.y=Math.min(h-24,Math.max(T0,A.y));
       if(box&&A.x>box.l&&A.x<box.r&&A.y>box.t&&A.y<box.b){const dl=A.x-box.l,dr=box.r-A.x,dt=A.y-box.t;const m=Math.min(dl,dr,dt);if(m===dt)A.y=box.t;else if(m===dl)A.x=box.l;else A.x=box.r;}});}
   vis.forEach(v=>{v.el._tox=v.x-v.ax;v.el._toy=v.y-v.ay;});}
+let pinT0=0,pinT0F=0;
 /* pins keep a fixed offset from their anchor while the camera moves, and re-arrange once, gently, after it settles */
 function updatePins(){const nt=performance.now();pinDt=Math.min(.1,(nt-pinT)/1000);pinT=nt;
   const w=stageEl.clientWidth,h=stageEl.clientHeight,R0=document.documentElement.classList.contains('expo')?21:15;
+  if(!(pinT0>0)||(pinT0F=(pinT0F||0)+1)%20===0)pinT0=pinTop();
   const vis=[];
   pins.forEach((el,i)=>{const hs=curHS[i];let ok=!state.xray&&!(hs.s!==undefined&&state.sym<hs.s);
     if(ok){pv.copy(hs.p()).project(cam);ok=!(pv.z>1||pv.z<-1||Math.abs(pv.x)>1.05||Math.abs(pv.y)>1.05);}
@@ -2449,7 +2460,7 @@ function updatePins(){const nt=performance.now();pinDt=Math.min(.1,(nt-pinT)/100
   else if((pinStill+=pinDt)>=.35&&pinStill-pinDt<.35)pinLayout(vis,w,h);
   let html='';
   vis.forEach(v=>{const el=v.el;if(el._tox!==undefined&&!moving){const kx=el._tox-el._ox,ky=el._toy-el._oy;if(Math.abs(kx)+Math.abs(ky)<.6){el._ox=el._tox;el._oy=el._toy;}else{const k=Math.min(1,pinDt*7);el._ox+=kx*k;el._oy+=ky*k;}}
-    const x=v.ax+el._ox,y=Math.min(h-24,Math.max(118,v.ay+el._oy));
+    const x=v.ax+el._ox,y=Math.min(h-24,Math.max(pinT0,v.ay+el._oy));
     el.style.transform=`translate(${x.toFixed(1)}px,${y.toFixed(1)}px)`;
     const dx=x-v.ax,dy=y-v.ay,d=Math.hypot(dx,dy);if(d>R0+4){const ex=x-dx/d*R0,ey=y-dy/d*R0,on=state.active===v.i?' class="on"':'';
       html+=`<g${on}><line x1="${v.ax.toFixed(1)}" y1="${v.ay.toFixed(1)}" x2="${ex.toFixed(1)}" y2="${ey.toFixed(1)}"/><circle cx="${v.ax.toFixed(1)}" cy="${v.ay.toFixed(1)}" r="4.5"/></g>`;}});
@@ -2471,8 +2482,8 @@ tabsEl.addEventListener('keydown',e=>{const k=e.key;if(!['ArrowLeft','ArrowRight
 const REPORT_URL='https://weqaa.gov.sa/helpdesk/lmrkz-lryysy-khdmt-lmstfydyn-1',REPORT_TEL='8002470000';
 state.rep=new Set();
 const REP_TX={
- ar:{h:'ظهرت هذي الأعراض في نخلتك؟',p:'اختر كل علامة لاحظتها في نخيلك:',m0:'<b>انتبه لهذي العلامات</b>إذا لاحظت أي علامة منها بلّغ وقاء فوراً. الاكتشاف المبكر ينقذ النخلة والنخيل المجاور.',
-   m1:n=>`<b>نخلتك قد تكون مصابة بسوسة النخيل الحمراء</b>لاحظت ${n===1?'علامة واحدة':n===2?'علامتين':n+' علامات'}. لا تقطع النخلة ولا تنقل فسائلها بنفسك، بلّغ وقاء ليصلك فريق مختص يتأكد ويعالج.`,b0:'بلّغ وقاء عبر خدمة المستفيدين',b1:'بلّغ عن الإصابة الآن',call:'اتصل بوقاء',how:'يفتح الزر مركز خدمة المستفيدين في موقع وقاء (يتطلب تسجيل الدخول). اكتب موقع النخلة والعلامات اللي لاحظتها وأرفق صوراً.'},
+ ar:{h:'هل ظهرت هذه الأعراض في نخلتك؟',p:'اختر كل علامة لاحظتها في نخيلك:',m0:'<b>انتبه لهذه العلامات</b>إذا لاحظت أي علامة منها بلّغ وقاء فوراً. الاكتشاف المبكر ينقذ النخلة والنخيل المجاور.',
+   m1:n=>`<b>نخلتك قد تكون مصابة بسوسة النخيل الحمراء</b>لاحظت ${n===1?'علامة واحدة':n===2?'علامتين':n+' علامات'}. لا تقطع النخلة ولا تنقل فسائلها بنفسك، بلّغ وقاء ليصلك فريق مختص يتأكد ويعالج.`,b0:'بلّغ وقاء عبر خدمة المستفيدين',b1:'بلّغ عن الإصابة الآن',call:'اتصل بوقاء',how:'يفتح الزر مركز خدمة المستفيدين في موقع وقاء (يتطلب تسجيل الدخول). اكتب موقع النخلة والعلامات التي لاحظتها وأرفق صوراً.'},
  en:{h:'Seeing these symptoms in your palm?',p:'Tick every sign you have noticed:',m0:'<b>Watch for these signs</b>If you notice any of them, report to Weqaa right away. Early detection saves the palm and the palms around it.',
    m1:n=>`<b>Your palm may be infested with red palm weevil</b>You noticed ${n} sign${n>1?'s':''}. Do not cut the palm or move its offshoots yourself; report to Weqaa so a specialist team can confirm and treat it.`,b0:'Report to Weqaa beneficiary services',b1:'Report the infestation now',call:'Call Weqaa',how:'This opens the Weqaa beneficiary service centre (sign-in required). Give the palm location and the signs you noticed, and attach photos.'}};
 const REP_IC='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>';
@@ -2594,9 +2605,9 @@ function asLangSw(){return `<div class="as-lang" role="group" aria-label="Langua
 function asRender(){const el=AS.el,en=EN(),N=AS_ITEMS.length;el.setAttribute('dir',state.lang==='en'?'ltr':'rtl');el.setAttribute('lang',state.lang);let h='';
   if(AS.phase==='intro'){const resume=AS.rec.pre&&!AS.rec.post;
     h=`${asLangSw()}${AS_PALM}<h2>${asT('أطلس سوسة النخيل الحمراء','Red Palm Weevil Atlas')}</h2>
-    <p class="as-sub">${resume?asT('أهلاً بعودتك. كمّل استكشاف الأطلس، وفي النهاية اضغط «أنهِ التجربة» لتشوف كم تعلّمت.','Welcome back. Keep exploring, then press “Finish” to see how much you learned.')
-      :asT('قبل ما تبدأ، جاوب على 5 أسئلة سريعة نعرف فيها معلوماتك الحالية. ما فيه صح وغلط الحين، جاوب باللي تعرفه.','Before you start, answer 5 quick questions so we know what you already know. No pressure, just answer what you know.')}</p>
-    <button type="button" class="as-btn" data-as="${resume?'close':'start'}">${resume?asT('كمّل التجربة','Continue'):asT('ابدأ','Start')}</button>
+    <p class="as-sub">${resume?asT('أهلاً بعودتك. تابع استكشاف الأطلس، وفي النهاية اضغط «أنهِ التجربة» لتعرف مقدار ما تعلّمت.','Welcome back. Keep exploring, then press “Finish” to see how much you learned.')
+      :asT('قبل أن تبدأ، أجب عن 5 أسئلة سريعة لقياس معلوماتك الحالية. لا توجد إجابة صحيحة أو خاطئة الآن، فأجب بما تعرفه.','Before you start, answer 5 quick questions so we know what you already know. No pressure, just answer what you know.')}</p>
+    <button type="button" class="as-btn" data-as="${resume?'close':'start'}">${resume?asT('تابع التجربة','Continue'):asT('ابدأ','Start')}</button>
     ${resume?'':`<button type="button" class="as-link" data-as="skip">${asT('ادخل الأطلس مباشرة','Go straight to the atlas')}</button>`}`;}
   else if(AS.phase==='pre'||AS.phase==='post'){const k=AS_ITEMS[AS.i],q=QUIZ[k],pick=AS.picks[AS.i];
     h=`<div class="as-step"><span>${AS.phase==='pre'?asT('قبل التجربة','Before the atlas'):asT('بعد التجربة','After the atlas')}</span><b>${asT('سؤال','Question')} ${AS.i+1} ${asT('من','of')} ${N}</b></div>
@@ -2607,10 +2618,10 @@ function asRender(){const el=AS.el,en=EN(),N=AS_ITEMS.length;el.setAttribute('di
       <button type="button" class="as-btn" data-as="next" ${pick===undefined?'disabled':''}>${AS.i<N-1?asT('التالي','Next'):asT('اعرض النتيجة','See result')}</button></div>
     ${AS.phase==='pre'?`<button type="button" class="as-link" data-as="skip">${asT('تخطَّ الأسئلة','Skip the questions')}</button>`:`<button type="button" class="as-link" data-as="close">${asT('ارجع للأطلس','Back to the atlas')}</button>`}`;}
   else if(AS.phase==='ready'){h=`${AS_PALM}<h2>${asT('جاهز للاستكشاف','Ready to explore')}</h2>
-    <p class="as-sub">${asT('تجوّل في أقسام الأطلس وحرّك المجسمات. ولما تخلص اضغط «أنهِ التجربة» في شريط الأقسام، وجاوب نفس الأسئلة لتشوف الفرق.','Explore the sections and move the 3D models. When you are done, press “Finish” in the section bar and answer the same questions to see the difference.')}</p>
+    <p class="as-sub">${asT('تجوّل في أقسام الأطلس وحرّك المجسمات. وعند الانتهاء اضغط «أنهِ التجربة» في شريط الأقسام، وأجب عن الأسئلة نفسها لترى الفرق.','Explore the sections and move the 3D models. When you are done, press “Finish” in the section bar and answer the same questions to see the difference.')}</p>
     <button type="button" class="as-btn" data-as="close">${asT('ادخل الأطلس','Enter the atlas')}</button>`;}
   else if(AS.phase==='result'){const pre=AS.rec.pre,post=AS.rec.post,d=pre?post.score-pre.score:null;
-    const msg=d===null?asT('هذي نتيجتك بعد التجربة.','Here is your score after the atlas.'):d>0?asT(`تحسّنت ${d} ${d===1?'إجابة':d===2?'إجابتين':'إجابات'}`,`+${d} correct`):d===0?asT('نفس النتيجة','Same score'):asT(`${d} عن القبلي`,`${d} vs before`);
+    const msg=d===null?asT('هذه نتيجتك بعد التجربة.','Here is your score after the atlas.'):d>0?asT(`تحسّنت ${d} ${d===1?'إجابة':d===2?'إجابتين':'إجابات'}`,`+${d} correct`):d===0?asT('النتيجة نفسها','Same score'):asT(`${d} عن القبلي`,`${d} vs before`);
     const arrow='<svg class="as-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
     h=`<h2>${post.score===N?asT('ممتاز! 🌴','Excellent! 🌴'):asT('نتيجتك','Your result')}</h2>
     <div class="as-res"><div class="as-sc"><span>${asT('قبل','Before')}</span><b>${pre?pre.score:'–'}</b><small>${asT('من','of')} ${N}</small></div>${arrow}<div class="as-sc post"><span>${asT('بعد','After')}</span><b>${post.score}</b><small>${asT('من','of')} ${N}</small></div></div>
@@ -2683,14 +2694,19 @@ function updRoutes(t){if(!RT.dots||!spreadG.visible)return;const N=RT.N,ph=RM?0:
 SPL_PTS.forEach(o=>{const d=document.createElement('div');d.className='spl spl-'+o.k;d.setAttribute('aria-hidden','true');stageEl.appendChild(d);o.el=d;});
 function updSpreadLabels(){updRoutes(performance.now());const on=spreadG.visible&&scene===palmScene&&!state.xray&&state.active===null;document.documentElement.classList.toggle('in-spread',spreadG.visible&&scene===palmScene);
   const w=stageEl.clientWidth,h=stageEl.clientHeight,L=state.lang==='en'?'en':state.lang==='ur'?'ur':'ar';
+  const placed=[];
   SPL_PTS.forEach(o=>{const d=o.el;if(!on){d.style.display='none';return;}pv.copy(o.p()).project(cam);
-    if(pv.z>1||Math.abs(pv.x)>.92||(1-pv.y)/2*h<(w<900?96:84)||pv.y<-.9){d.style.display='none';return;}
-    if(d.textContent!==o[L])d.textContent=o[L];d.style.display='';const hw=(d.offsetWidth||120)/2+8,lx=Math.min(w-hw,Math.max(hw,(pv.x+1)/2*w));d.style.transform=`translate(${lx.toFixed(1)}px,${((1-pv.y)/2*h).toFixed(1)}px) translate(-50%,-100%)`;});}
+    if(pv.z>1||Math.abs(pv.x)>.92||(1-pv.y)/2*h<(w<900?72:84)||pv.y<-.9){d.style.display='none';return;}
+    if(d.textContent!==o[L])d.textContent=o[L];d.style.display='';const hw=(d.offsetWidth||120)/2+8,bh=(d.offsetHeight||24)+4,ly=(1-pv.y)/2*h;let lx=Math.min(w-hw,Math.max(hw,(pv.x+1)/2*w));
+    /* nudge sideways when two tags would overlap (phones bring the palms close together) */
+    placed.forEach(q=>{if(Math.abs(ly-q.y)<bh&&Math.abs(lx-q.x)<hw+q.hw-12){const dir=lx>=q.x?1:-1;lx=q.x+dir*(hw+q.hw-12);}});
+    lx=Math.min(w-hw,Math.max(hw,lx));placed.push({x:lx,y:ly,hw});
+    d.style.transform=`translate(${lx.toFixed(1)}px,${ly.toFixed(1)}px) translate(-50%,-100%)`;});}
 /* the spread section opens with a clear note on scale and the route the numbers follow */
 {const _rp=renderPanel;renderPanel=function(){_rp();if(state.tab!=='spread'||content.querySelector('.scale-note'))return;const lede=content.querySelector('.lede');if(!lede)return;const L=state.lang;
   const t=L==='en'?['The insects in the scene are enlarged many times','So you can see them. The real weevil is only 2–4 cm long, about the size of a date.','How to read the scene','The tag with a red dot marks the <b>infestation source</b>; tags with a green dot mark <b>healthy palms at risk</b>. The moving dotted arcs show the weevil’s flight path. The numbers follow the journey: <b>1</b> is the source, then flight, then what attracts it, and <b>5</b> is long-distance spread by people.']
    :L==='ur'?['منظر میں کیڑے کئی گنا بڑے دکھائے گئے ہیں','تاکہ آپ انہیں دیکھ سکیں۔ اصل سونڈی صرف 2–4 سینٹی میٹر لمبی ہے، تقریباً ایک کھجور جتنی۔','منظر کیسے پڑھیں','سرخ نقطے والا نشان <b>انفیکشن کا ذریعہ</b> ہے اور سبز نقطے والے نشان <b>خطرے میں صحت مند کھجوریں</b>۔ حرکت کرتی نقطہ دار لکیریں سونڈی کی پرواز کا راستہ دکھاتی ہیں۔ نمبر سفر کی ترتیب میں ہیں: <b>1</b> ماخذ اور <b>5</b> انسان کے ذریعے دور تک منتقلی۔']
-   :['الحشرات في المشهد مكبّرة أضعافاً','لتقدر تشوفها. السوسة الحقيقية طولها ٢–٤ سم فقط، تقريباً بحجم حبة التمر.','كيف تقرأ المشهد','العلامة ذات النقطة الحمراء فوق النخلة المصابة هي <b>مصدر الإصابة</b>، والعلامات ذات النقطة الخضراء فوق النخيل السليم هي <b>النخيل المهدَّد</b>. والخطوط المنقّطة المتحركة تبيّن مسار طيران السوسة. والأرقام تمشي مع الرحلة: <b>١</b> مصدر الإصابة، ثم الطيران، ثم ما يجذبها، وآخرها <b>٥</b> انتقالها بيد الإنسان لمسافات بعيدة.'];
+   :['الحشرات في المشهد مكبّرة أضعافاً','لتسهل رؤيتها. أما السوسة الحقيقية فطولها ٢–٤ سم فقط، أي بحجم حبة التمر تقريباً.','كيف تقرأ المشهد','العلامة ذات النقطة الحمراء فوق النخلة المصابة هي <b>مصدر الإصابة</b>، والعلامات ذات النقطة الخضراء فوق النخيل السليم هي <b>النخيل المهدَّد</b>. والخطوط المنقّطة المتحركة تبيّن مسار طيران السوسة. والأرقام تتبع ترتيب الرحلة: <b>١</b> مصدر الإصابة، ثم الطيران، ثم ما يجذبها، وآخرها <b>٥</b> انتقالها بيد الإنسان لمسافات بعيدة.'];
   lede.insertAdjacentHTML('afterend',`<div class="scale-note"><div class="sn-row"><span class="sn-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21M10.5 7.5v6M7.5 10.5h6"/></svg></span><div><b>${t[0]}</b><span>${t[1]}</span></div></div>
    <div class="sn-row"><span class="sn-ic rt" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg></span><div><b>${t[2]}</b><span>${t[3]}</span></div></div></div>`);};}
 requestAnimationFrame(frame);
@@ -2701,7 +2717,11 @@ requestAnimationFrame(frame);
 /* Section bar: every section visible at once as a wrapped grid, no sideways scrolling */
 @media (min-width:900px){
 .tabs{position:static;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;overflow:visible;padding:10px 0 14px;scroll-snap-type:none}
-.tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:62px;padding:8px 4px;border-radius:12px;white-space:normal;text-align:center;font-size:12.5px;line-height:1.3}
+.tab{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:6px;min-height:42px;padding:6px 6px;border-radius:12px;white-space:normal;text-align:center;font-size:13px;line-height:1.25}
+.tab svg{flex:none;width:16px;height:16px}
+.tabs{padding:8px 0 12px}
+.brand{padding-block:2px 4px}
+.brand .langsw{margin-top:4px}
 .tabs .tab:first-child,.tabs .tab:last-child{margin-inline:0}
 .tab .tn{display:none}
 html.expo .tab{min-height:76px;padding:10px 6px;font-size:15px}
@@ -2712,6 +2732,10 @@ html.expo .tab{min-height:76px;padding:10px 6px;font-size:15px}
 .fsz button{font:inherit;font-weight:700;font-size:14px;line-height:1;border:0;background:transparent;color:var(--ink);padding:6px 11px;border-radius:999px;cursor:pointer;direction:ltr}
 .fsz button:hover{background:var(--sky2)}.fsz button:disabled{opacity:.35;cursor:default}
 .fsz button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+/* phones: never let the page shift sideways (the section strip scrolls inside itself) */
+@media (max-width:899px){html,body,.app,.panel{overflow-x:clip}}
+/* phones: language and text-size buttons get a full finger-sized hit area */
+@media (max-width:899px){.langsw button,.fsz button{min-height:40px;min-width:44px;padding:8px 14px;font-size:14px}}
 html[data-fs] #content,html[data-fs] #tabs,html[data-fs] .callout{zoom:var(--fsz,1)}
 </style>
 <script>(function(){const L=[.9,1,1.15,1.3,1.45];let k=1;try{const v=+localStorage.getItem('weqaa-fs');if(L.includes(v))k=L.indexOf(v);}catch(e){}
@@ -2847,7 +2871,7 @@ html.expo .spl{font-size:15px;padding:7px 14px 7px 12px}
 .scale-note b{display:block;font-size:15px;color:#7c2d12;margin-bottom:2px}
 .scale-note span{font-size:14px;line-height:1.6;color:#431407}
 .scale-note span b{display:inline;font-size:inherit;color:#b91c1c}
-@media (max-width:899px){.spl{font-size:11px;padding:4px 9px 4px 8px}html.in-spread .badge{font-size:12px;padding:6px 11px;max-width:calc(100% - 70px);white-space:normal;text-align:center}}
+@media (max-width:899px){.spl{font-size:11px;padding:4px 9px 4px 8px}html.in-spread .badge{font-size:11.5px;padding:4px 10px;max-width:calc(100% - 70px);white-space:normal;text-align:center}}
 </style>
 <script>/* voice-over files load once the scene is up */window.addEventListener("load",function(){setTimeout(function(){var s=document.createElement("script");s.src="audio.js";s.async=true;document.head.appendChild(s);},1200);});</script>
 </body></html>
